@@ -41,7 +41,7 @@ const TOOL_METADATA = {
   },
   libraxis_create_entry: {
     description:
-      "Create a brand-new entry, including a brand-new skill. Do not provide lineage_id when creating.",
+      "Create a brand-new entry, including a non-agent skill. Use this tool for skill creation (type=\"skill\"). Do not provide lineage_id when creating.",
     inputSchema: z.object({
       type: writableEntryTypeSchema,
       title: z.string().min(1),
@@ -141,8 +141,10 @@ const TOOL_METADATA = {
     })
   },
   libraxis_upload_agent: {
-    description: "Upload a reusable agent package as a skill-backed entry.",
+    description:
+      "Upload a reusable agent package only. Do not use this tool for generic skill creation.",
     inputSchema: z.object({
+      agent_intent: z.literal("agent_package"),
       title: z.string().min(1),
       body_markdown: z.string().min(1),
       metadata: z.record(z.string(), z.unknown()).optional(),

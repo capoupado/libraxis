@@ -133,6 +133,26 @@ describe("HTTP contract: agents", () => {
     expect(invalid.body.error).toBe("INVALID_INPUT");
   });
 
+  it("rejects owner agent payloads with non-agent skill_type metadata", async () => {
+    const { cookie, csrfToken } = await loginOwnerSession();
+
+    const invalid = await request(app.server)
+      .post("/owner/agents")
+      .set("Cookie", cookie)
+      .set("x-csrf-token", csrfToken)
+      .send({
+        title: "Actually a skill",
+        body_markdown: "This should be created through the skill path.",
+        metadata: {
+          skill_type: "workflow"
+        }
+      });
+
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error).toBe("INVALID_INPUT");
+    expect(invalid.body.suggestion).toContain("libraxis_create_entry");
+  });
+
   it("lists agents even when many newer non-agent skills exceed default limit", async () => {
     const { cookie, csrfToken } = await loginOwnerSession();
 

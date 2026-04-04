@@ -15,6 +15,9 @@ interface McpErrorContext {
 const NEW_SKILL_CREATION_HINT =
   "If you are creating a new skill, call libraxis_create_entry with type=\"skill\" plus title and body_markdown. lineage_id is only required for existing skill or entry lineages.";
 
+const AGENT_UPLOAD_INTENT_HINT =
+  "libraxis_upload_agent is only for reusable agents and requires agent_intent=\"agent_package\". If you are creating a skill, call libraxis_create_entry with type=\"skill\".";
+
 function formatZodIssueSummary(error: ZodError): string {
   const formatted = error.issues.slice(0, 3).map((issue) => {
     const path = issue.path.join(".");
@@ -36,9 +39,22 @@ function hasLineageValidationIssue(error: ZodError): boolean {
   });
 }
 
+function hasAgentIntentValidationIssue(error: ZodError): boolean {
+  return error.issues.some((issue) => {
+    const issuePath = issue.path.join(".").toLowerCase();
+    const message = issue.message.toLowerCase();
+    return issuePath.includes("agent_intent") || message.includes("agent_intent");
+  });
+}
+
 function buildZodSuggestion(error: ZodError, context?: McpErrorContext): string | undefined {
   const toolName = context?.toolName;
   const lineageIssue = hasLineageValidationIssue(error);
+  const agentIntentIssue = hasAgentIntentValidationIssue(error);
+
+  if (toolName === "libraxis_upload_agent" && agentIntentIssue) {
+    return AGENT_UPLOAD_INTENT_HINT;
+  }
 
   if (!lineageIssue) {
     return undefined;

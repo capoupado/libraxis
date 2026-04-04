@@ -24,7 +24,7 @@ Libraxis is a self-hosted backend for storing, retrieving, and evolving knowledg
 ---
 ## Screenshots
 
-<center>
+<p align="center">
 
 <!-- SCREENSHOT: Web UI – dashboard / entry list -->
 ![WebUI](https://i.imgur.com/ldESpPY.png)
@@ -32,7 +32,7 @@ Libraxis is a self-hosted backend for storing, retrieving, and evolving knowledg
 <!-- SCREENSHOT: MCP tool in action (e.g. Claude Desktop) -->
 ![MCP](https://i.imgur.com/wArKMvO.png) ![MCP2](https://i.imgur.com/kkfP18c.png)
 
-</center>
+</p>
 
 ---
 
@@ -128,6 +128,8 @@ npm run mcp:dev
 ### Available MCP Tools
 
 `libraxis_get_context` · `libraxis_list_skills` · `libraxis_load_skill` · `libraxis_create_entry` · `libraxis_update_entry` · `libraxis_log_mistake_with_lesson` · `libraxis_link_entries` · `libraxis_propose_skill_improvement` · `libraxis_list_skill_proposals` · `libraxis_review_skill_proposal` · `libraxis_skill_dashboard` · `libraxis_api_key_create` · `libraxis_api_key_list` · `libraxis_api_key_revoke` · `libraxis_export_entry_markdown` · `libraxis_upload_agent` · `libraxis_list_agents` · `libraxis_load_agent`
+
+Use `libraxis_create_entry` with `type="skill"` for standard skill creation. `libraxis_upload_agent` is reserved for reusable agent packages.
 
 ---
 

@@ -37,4 +37,31 @@ describe("MCP error envelope mapping", () => {
     expect(envelope.message).toBe("Denied");
     expect(envelope.suggestion).toBe("Use an API key with write scope");
   });
+
+  it("suggests create_entry when upload_agent is called without agent intent", () => {
+    const parsed = z
+      .object({
+        agent_intent: z.literal("agent_package"),
+        title: z.string().min(1),
+        body_markdown: z.string().min(1)
+      })
+      .safeParse({
+        title: "Not an agent",
+        body_markdown: "Likely a skill payload"
+      });
+
+    expect(parsed.success).toBe(false);
+
+    if (parsed.success) {
+      throw new Error("Expected parse failure in test setup");
+    }
+
+    const envelope = toMcpErrorEnvelope(parsed.error, {
+      toolName: "libraxis_upload_agent"
+    });
+
+    expect(envelope.error).toBe("INVALID_INPUT");
+    expect(envelope.suggestion).toContain("libraxis_create_entry");
+    expect(envelope.suggestion).toContain("agent_intent");
+  });
 });

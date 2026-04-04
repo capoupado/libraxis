@@ -5,6 +5,7 @@ import type { BaseMcpServer } from "../server.js";
 import { listAgents, loadAgent, uploadAgent } from "../../service/agents.js";
 
 const uploadAgentSchema = z.object({
+  agent_intent: z.literal("agent_package"),
   title: z.string().min(1),
   body_markdown: z.string().min(1),
   metadata: z.record(z.string(), z.unknown()).optional(),
@@ -28,7 +29,7 @@ const loadAgentSchema = z
 
 export function registerAgentTools(server: BaseMcpServer, db: Database.Database): void {
   server.registerTool("libraxis_upload_agent", async (input) => {
-    const parsed = uploadAgentSchema.parse(input);
+    const { agent_intent: _agentIntent, ...parsed } = uploadAgentSchema.parse(input);
     return uploadAgent(db, parsed);
   });
 

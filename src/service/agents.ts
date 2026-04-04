@@ -30,6 +30,18 @@ export interface DeleteAgentInput {
 
 function normalizeAgentMetadata(metadata?: Record<string, unknown>): Record<string, unknown> {
   const normalized = { ...(metadata ?? {}) };
+
+  if (
+    typeof normalized.skill_type === "string" &&
+    normalized.skill_type !== AGENT_SKILL_TYPE
+  ) {
+    throw new DomainError(
+      "INVALID_INPUT",
+      "Agent upload payload cannot set metadata.skill_type to a non-agent value",
+      "Use libraxis_create_entry with type=\"skill\" for non-agent skill creation."
+    );
+  }
+
   normalized.skill_type = AGENT_SKILL_TYPE;
 
   if (!Array.isArray(normalized.steps)) {
