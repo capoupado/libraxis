@@ -22,14 +22,16 @@ Libraxis is a self-hosted backend for storing, retrieving, and evolving knowledg
 | **Local-first** | SQLite storage with append-only versioning — no cloud required | |
 
 ---
-<center>
 ## Screenshots
+
+<center>
 
 <!-- SCREENSHOT: Web UI – dashboard / entry list -->
 ![WebUI](https://i.imgur.com/ldESpPY.png)
 
 <!-- SCREENSHOT: MCP tool in action (e.g. Claude Desktop) -->
 ![MCP](https://i.imgur.com/wArKMvO.png) ![MCP2](https://i.imgur.com/kkfP18c.png)
+
 </center>
 
 ---
