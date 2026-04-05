@@ -30,7 +30,7 @@ export function App() {
   const [selectedLineageId, setSelectedLineageId] = useState<string | null>(null);
   const [entriesRefreshToken, setEntriesRefreshToken] = useState(0);
   const [newEntryType, setNewEntryType] = useState<
-    "prompt" | "mistake" | "lesson" | "note" | "skill"
+    "lesson" | "note" | "skill" | "user" | "feedback" | "project" | "reference"
   >("note");
   const [feedback, setFeedback] = useState<string>("");
   const [appError, setAppError] = useState<string>("");
@@ -204,19 +204,23 @@ export function App() {
                   onChange={(event) =>
                     setNewEntryType(
                       event.target.value as
-                        | "prompt"
-                        | "mistake"
                         | "lesson"
                         | "note"
                         | "skill"
+                        | "user"
+                        | "feedback"
+                        | "project"
+                        | "reference"
                     )
                   }
                 >
-                  <option value="note">note</option>
-                  <option value="prompt">prompt</option>
-                  <option value="mistake">mistake</option>
-                  <option value="lesson">lesson</option>
-                  <option value="skill">skill</option>
+                  <option value="user">user — who the user is</option>
+                  <option value="feedback">feedback — correction or guidance</option>
+                  <option value="project">project — active project context</option>
+                  <option value="reference">reference — external link or resource</option>
+                  <option value="note">note — freeform observation</option>
+                  <option value="lesson">lesson — distilled learning</option>
+                  <option value="skill">skill — reusable instructions</option>
                 </select>
               </label>
 

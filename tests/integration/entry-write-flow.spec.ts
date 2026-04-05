@@ -17,13 +17,13 @@ describe("integration: entry write flow", () => {
     ctx.cleanup();
   });
 
-  it("supports prompt -> note -> mistake+lesson -> link workflow with append-only history", async () => {
+  it("supports note -> note -> mistake+lesson -> link workflow with append-only history", async () => {
     const mcp = createMcpServer();
     registerEntryTools(mcp, ctx.db);
 
     const prompt = (await mcp.callTool("libraxis_create_entry", {
-      type: "prompt",
-      title: "Prompt Workflow",
+      type: "note",
+      title: "Initial Note",
       body_markdown: "Analyze task and produce remediation plan.",
       created_by: "integration"
     })) as { entry_id: string; lineage_id: string; version_number: number };

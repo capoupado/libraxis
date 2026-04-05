@@ -7,7 +7,7 @@ import { linkEntries } from "../../service/links.js";
 import { logMistakeWithLesson } from "../../service/mistakes-lessons.js";
 
 const createEntrySchema = z.object({
-  type: z.enum(["prompt", "mistake", "lesson", "note", "skill"]),
+  type: z.enum(["lesson", "note", "skill", "user", "feedback", "project", "reference"]),
   title: z.string().min(1),
   body_markdown: z.string().min(1),
   metadata: z.record(z.string(), z.unknown()).optional(),

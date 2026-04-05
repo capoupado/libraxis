@@ -2,8 +2,14 @@ import { z, type ZodType } from "zod";
 
 import { DomainError } from "../errors.js";
 
-export const entryTypeSchema = z.enum(["prompt", "run", "mistake", "lesson", "note", "skill"]);
-export const writableEntryTypeSchema = z.enum(["prompt", "mistake", "lesson", "note", "skill"]);
+export const entryTypeSchema = z.enum([
+  "prompt", "run", "mistake", "lesson", "note", "skill",
+  "user", "feedback", "project", "reference"
+]);
+export const writableEntryTypeSchema = z.enum([
+  "lesson", "note", "skill",
+  "user", "feedback", "project", "reference"
+]);
 export const apiKeyScopeSchema = z.enum(["read", "write", "admin"]);
 
 export const tagAllowlistPattern = /^[a-z0-9_-]+$/;

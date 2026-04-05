@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 
 import { listTagsForEntry } from "../db/queries/tag-queries.js";
 
-type EntryType = "prompt" | "run" | "mistake" | "lesson" | "note" | "skill";
+type EntryType = "prompt" | "run" | "mistake" | "lesson" | "note" | "skill" | "user" | "feedback" | "project" | "reference";
 
 interface ContextRow {
   id: string;
@@ -17,9 +17,13 @@ interface ContextRow {
 
 const TYPE_WEIGHTS: Record<EntryType, number> = {
   skill: 2,
+  user: 1.8,
   lesson: 1.5,
+  feedback: 1.5,
   mistake: 1.2,
+  project: 1.3,
   prompt: 1,
+  reference: 1,
   run: 0.8,
   note: 0.8
 };

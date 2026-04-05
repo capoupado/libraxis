@@ -8,14 +8,33 @@ import { registerAllMcpTools } from "./register-all-tools.js";
 import { createMcpServer } from "./server.js";
 import { getRequiredScope } from "./tool-scope.js";
 
-const entryTypeSchema = z.enum(["prompt", "run", "mistake", "lesson", "note", "skill"]);
-const writableEntryTypeSchema = z.enum(["prompt", "mistake", "lesson", "note", "skill"]);
+const entryTypeSchema = z.enum([
+  "prompt", "run", "mistake", "lesson", "note", "skill",
+  "user", "feedback", "project", "reference"
+]);
+const writableEntryTypeSchema = z.enum([
+  "lesson", "note", "skill",
+  "user", "feedback", "project", "reference"
+]);
 const apiScopeSchema = z.enum(["read", "write", "admin"]);
 const proposalStatusSchema = z.enum(["pending", "approved", "rejected"]);
 
 const TOOL_METADATA = {
+  libraxis_get_agent_briefing: {
+    description:
+      "Call at the start of any session — no arguments needed. Returns the most recent user profile, feedback, and project context entries so you can orient yourself before starting work.",
+    inputSchema: z.object({
+      limit: z.number().int().min(1).max(20).optional()
+    }).optional()
+  },
   libraxis_get_context: {
-    description: "Get a ranked context bundle for an upcoming task.",
+    description:
+      "Get a ranked context bundle for an upcoming task. Use task_description to describe what you are about to do. " +
+      "Optionally filter by include_types. Valid types: " +
+      "note (freeform observation), lesson (distilled learning), skill (reusable instructions), " +
+      "user (user profile / preferences), feedback (corrections from user), " +
+      "project (active project context), reference (external link or resource), " +
+      "prompt (saved prompt template), mistake (error record), run (execution log).",
     inputSchema: z.object({
       task_description: z.string().min(1),
       limit: z.number().int().min(1).max(100).optional(),
@@ -41,7 +60,15 @@ const TOOL_METADATA = {
   },
   libraxis_create_entry: {
     description:
-      "Create a brand-new entry, including a non-agent skill. Use this tool for skill creation (type=\"skill\"). Do not provide lineage_id when creating.",
+      "Create a new entry. Choose the type that best fits the content:\n" +
+      "  user       — who the user is: role, preferences, background, working style\n" +
+      "  feedback   — correction or guidance the user gave you; what to avoid or repeat\n" +
+      "  project    — active project context: goals, constraints, decisions, deadlines\n" +
+      "  reference  — external resource: URL, doc, tool, or named external system\n" +
+      "  skill      — reusable step-by-step instructions or workflow\n" +
+      "  lesson     — distilled insight or learning worth persisting\n" +
+      "  note       — freeform observation that does not fit another type\n" +
+      "Do not provide lineage_id when creating.",
     inputSchema: z.object({
       type: writableEntryTypeSchema,
       title: z.string().min(1),

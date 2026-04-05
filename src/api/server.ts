@@ -17,7 +17,14 @@ export async function buildHttpServer() {
   await registerSecurityMiddleware(app);
 
   app.get("/health", async () => ({
-    status: "ok"
+    status: "ok",
+    version: "1.0.0",
+    entry_types: {
+      writable: ["lesson", "note", "skill", "user", "feedback", "project", "reference"],
+      readable: ["prompt", "run", "mistake", "lesson", "note", "skill", "user", "feedback", "project", "reference"]
+    },
+    relation_types: ["caused_by", "resolved_by", "used_skill", "composes", "related_to"],
+    api_key_scopes: ["read", "write", "admin"]
   }));
 
   app.setErrorHandler((error, _request, reply) => {

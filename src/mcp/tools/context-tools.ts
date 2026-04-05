@@ -5,12 +5,19 @@ import type { BaseMcpServer } from "../server.js";
 import { getContextBundle } from "../../service/context.js";
 import { listSkills, loadSkill } from "../../service/skills.js";
 
+const allEntryTypes = z.enum([
+  "prompt", "run", "mistake", "lesson", "note", "skill",
+  "user", "feedback", "project", "reference"
+]);
+
 const getContextInputSchema = z.object({
   task_description: z.string().min(1),
   limit: z.number().int().min(1).max(100).optional(),
-  include_types: z
-    .array(z.enum(["prompt", "run", "mistake", "lesson", "note", "skill"]))
-    .optional()
+  include_types: z.array(allEntryTypes).optional()
+});
+
+const getBriefingInputSchema = z.object({
+  limit: z.number().int().min(1).max(20).optional()
 });
 
 const listSkillsInputSchema = z.object({
@@ -32,6 +39,15 @@ export function registerContextTools(server: BaseMcpServer, db: Database.Databas
   server.registerTool("libraxis_get_context", async (input) => {
     const parsed = getContextInputSchema.parse(input);
     return getContextBundle(db, parsed);
+  });
+
+  server.registerTool("libraxis_get_agent_briefing", async (input) => {
+    const parsed = getBriefingInputSchema.parse(input ?? {});
+    return getContextBundle(db, {
+      task_description: " ",
+      include_types: ["user", "feedback", "project"],
+      limit: parsed.limit ?? 10
+    });
   });
 
   server.registerTool("libraxis_list_skills", async (input) => {

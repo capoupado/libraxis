@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 
-export type EntryType = "prompt" | "run" | "mistake" | "lesson" | "note" | "skill";
+export type EntryType = "prompt" | "run" | "mistake" | "lesson" | "note" | "skill" | "user" | "feedback" | "project" | "reference";
 
 export interface EntryRow {
   id: string;

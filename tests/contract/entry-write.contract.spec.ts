@@ -44,8 +44,8 @@ describe("HTTP contract: entry write/update/search/link", () => {
 
   it("creates, updates, and searches entries", async () => {
     const createRes = await request(app.server).post("/entries").send({
-      type: "prompt",
-      title: "Prompt A",
+      type: "note",
+      title: "Note A",
       body_markdown: "Collect release notes and summarize key risks.",
       tags: ["release", "quality"]
     });
@@ -130,8 +130,8 @@ describe("HTTP contract: entry write/update/search/link", () => {
 
   it("creates links and enforces used_skill direction semantics", async () => {
     const promptRes = await request(app.server).post("/entries").send({
-      type: "prompt",
-      title: "Prompt A",
+      type: "note",
+      title: "Note A",
       body_markdown: "Gather evidence before generating an answer."
     });
 
