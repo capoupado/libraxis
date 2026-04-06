@@ -79,7 +79,11 @@ export function EntryDetailPage({ lineageId, csrfToken, onDeleted }: EntryDetail
   return (
     <section>
       <h2>{latest.title}</h2>
-      <p>{latest.tags.length > 0 ? `Tags: ${latest.tags.join(", ")}` : "Tags: none"}</p>
+      <p>
+        {latest.tags.length > 0
+          ? latest.tags.map((tag) => <span key={tag} className="badge" style={{ marginRight: 6 }}>{tag}</span>)
+          : <span style={{ color: "var(--muted-fg)" }}>no tags</span>}
+      </p>
       <MarkdownView markdown={latest.body_markdown} />
 
       {actionError ? <p role="alert">{actionError}</p> : null}
@@ -87,6 +91,7 @@ export function EntryDetailPage({ lineageId, csrfToken, onDeleted }: EntryDetail
       <div>
         <button
           type="button"
+          className={confirmArchive ? "cyber-btn cyber-btn--outline cyber-btn--sm" : "cyber-btn cyber-btn--secondary cyber-btn--sm"}
           disabled={deleting}
           onClick={() => {
             setActionError(null);
@@ -101,7 +106,7 @@ export function EntryDetailPage({ lineageId, csrfToken, onDeleted }: EntryDetail
             <p>This will remove the entry from active lists. Continue?</p>
             <button
               type="button"
-              className="error"
+              className="cyber-btn cyber-btn--secondary"
               disabled={deleting}
               onClick={async () => {
                 setDeleting(true);

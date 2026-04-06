@@ -173,8 +173,9 @@ export function ProposalsPage({ csrfToken }: ProposalsPageProps) {
       {skills.length === 0 && !skillsLoading ? <p>No active skills found to propose changes.</p> : null}
       {skills.length > 0 ? (
         <>
-          <label>
-            Target Skill
+          <label className="cyber-label"><span className="dot"></span> Target Skill</label>
+          <div className="cyber-input">
+            <span className="cyber-input__prefix">&gt;</span>
             <select
               value={selectedSkillLineageId}
               onChange={(event) => setSelectedSkillLineageId(event.target.value)}
@@ -185,10 +186,11 @@ export function ProposalsPage({ csrfToken }: ProposalsPageProps) {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
 
-          <label>
-            Action
+          <label className="cyber-label"><span className="dot"></span> Action</label>
+          <div className="cyber-input">
+            <span className="cyber-input__prefix">&gt;</span>
             <select
               value={actionType}
               onChange={(event) => setActionType(event.target.value as "improve" | "archive")}
@@ -196,31 +198,34 @@ export function ProposalsPage({ csrfToken }: ProposalsPageProps) {
               <option value="improve">Improve skill</option>
               <option value="archive">Archive skill</option>
             </select>
-          </label>
+          </div>
 
-          <label>
-            Proposal Markdown
+          <label className="cyber-label"><span className="dot"></span> Proposal Markdown</label>
+          <div className="cyber-input cyber-input--area">
+            <span className="cyber-input__prefix">&gt;</span>
             <textarea
               rows={6}
               value={proposalMarkdown}
               onChange={(event) => setProposalMarkdown(event.target.value)}
             />
-          </label>
+          </div>
 
-          <label>
-            Rationale
+          <label className="cyber-label"><span className="dot"></span> Rationale</label>
+          <div className="cyber-input cyber-input--area">
+            <span className="cyber-input__prefix">&gt;</span>
             <textarea rows={3} value={rationale} onChange={(event) => setRationale(event.target.value)} />
-          </label>
+          </div>
 
-          <button type="button" disabled={submitting} onClick={handleCreateProposal}>
+          <button type="button" className="cyber-btn cyber-btn--glitch" disabled={submitting} onClick={handleCreateProposal}>
             {submitting ? "Creating..." : "Create Proposal"}
           </button>
         </>
       ) : null}
 
       <h3>Review Proposals</h3>
-      <label>
-        Status Filter
+      <label className="cyber-label"><span className="dot"></span> Status Filter</label>
+      <div className="cyber-input">
+        <span className="cyber-input__prefix">&gt;</span>
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as ProposalStatusFilter)}
@@ -230,24 +235,24 @@ export function ProposalsPage({ csrfToken }: ProposalsPageProps) {
           <option value="rejected">Rejected</option>
           <option value="all">All</option>
         </select>
-      </label>
+      </div>
 
       {loading ? <p role="status">Loading proposals...</p> : null}
       {error ? <p role="alert">{error}</p> : null}
       {feedback ? <p role="status">{feedback}</p> : null}
       {!loading && items.length === 0 ? <p>No proposals found for the selected filter.</p> : null}
       {items.map((proposal) => (
-        <article key={proposal.id}>
+        <article key={proposal.id} className="cyber-card cyber-card--hover" style={{ marginBottom: "1rem" }}>
           <h3>{proposal.skill_title?.trim() ? proposal.skill_title : proposal.skill_lineage_id}</h3>
-          <p>Skill ID: {proposal.skill_lineage_id}</p>
-          <p>Status: {proposal.status}</p>
-          <p>Action: {proposal.action_type === "archive" ? "Archive skill" : "Improve skill"}</p>
+          <p><span className="cyber-label" style={{ marginBottom: 0 }}>Skill ID:</span> {proposal.skill_lineage_id}</p>
+          <p><span className="badge">{proposal.status}</span> <span className="badge">{proposal.action_type === "archive" ? "Archive" : "Improve"}</span></p>
           <pre className="proposal-markdown">{proposal.proposal_markdown}</pre>
-          <p>{proposal.rationale}</p>
+          <p style={{ color: "var(--muted-fg)" }}>{proposal.rationale}</p>
           {proposal.status === "pending" ? (
-            <div>
+            <div style={{ display: "flex", gap: 8 }}>
               <button
                 type="button"
+                className="cyber-btn cyber-btn--sm"
                 disabled={reviewingProposalId === proposal.id}
                 onClick={async () => handleReview(proposal.id, "approve")}
               >
@@ -255,6 +260,7 @@ export function ProposalsPage({ csrfToken }: ProposalsPageProps) {
               </button>
               <button
                 type="button"
+                className="cyber-btn cyber-btn--secondary cyber-btn--sm"
                 disabled={reviewingProposalId === proposal.id}
                 onClick={async () => handleReview(proposal.id, "reject")}
               >
@@ -262,7 +268,7 @@ export function ProposalsPage({ csrfToken }: ProposalsPageProps) {
               </button>
             </div>
           ) : (
-            <p>This proposal has already been reviewed.</p>
+            <p style={{ color: "var(--muted-fg)" }}>This proposal has already been reviewed.</p>
           )}
         </article>
       ))}

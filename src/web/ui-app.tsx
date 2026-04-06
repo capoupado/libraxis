@@ -13,15 +13,6 @@ import { fetchJson, getErrorMessage } from "./lib/http-client.js";
 
 type TabKey = "entries" | "new" | "agents" | "proposals" | "dashboard" | "keys" | "howto";
 
-const ASCII_HEADER = `
- ██╗     ██╗██████╗ ██████╗  █████╗ ██╗  ██╗██╗███████╗
- ██║     ██║██╔══██╗██╔══██╗██╔══██╗╚██╗██╔╝██║██╔════╝
- ██║     ██║██████╔╝██████╔╝███████║ ╚███╔╝ ██║███████╗
- ██║     ██║██╔══██╗██╔══██╗██╔══██║ ██╔██╗ ██║╚════██║
- ███████╗██║██████╔╝██║  ██║██║  ██║██╔╝ ██╗██║███████║
- ╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
-                                                                                              
-`;
 
 export function App() {
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
@@ -110,10 +101,11 @@ export function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <pre className="ascii-header">{ASCII_HEADER}</pre>
+        <h1 className="cyber-glitch" data-text="LIBRAXIS">LIBRAXIS</h1>
         <div className="topbar-actions">
           <button
             type="button"
+            className="cyber-btn cyber-btn--ghost"
             onClick={async () => {
               setAppError("");
               try {
@@ -147,7 +139,7 @@ export function App() {
           <button
             key={item.key}
             type="button"
-            className={tab === item.key ? "active" : ""}
+            className={`cyber-btn cyber-btn--sm${tab === item.key ? " active" : ""}`}
             onClick={() => {
               setFeedback("");
               setAppError("");
@@ -161,10 +153,33 @@ export function App() {
 
       <main className="content">
         {tab === "entries" ? (
-          <section className="split">
-            <div className="pane">
-              <div className="pane-header">Entry List</div>
-              <div className="panel">
+          selectedLineageId ? (
+            <section className="cyber-card cyber-card--terminal">
+              <div className="terminal__bar">
+                <button
+                  type="button"
+                  className="cyber-btn cyber-btn--ghost cyber-btn--sm"
+                  onClick={() => setSelectedLineageId(null)}
+                >
+                  &larr; Back
+                </button>
+                <span className="terminal__title">Entry Detail</span>
+              </div>
+              <div className="terminal__body">
+                <EntryDetailPage
+                  lineageId={selectedLineageId}
+                  csrfToken={csrfToken}
+                  onDeleted={() => {
+                    setSelectedLineageId(null);
+                    setEntriesRefreshToken((value) => value + 1);
+                  }}
+                />
+              </div>
+            </section>
+          ) : (
+            <section className="cyber-card cyber-card--terminal">
+              <div className="terminal__bar"><span className="terminal__title">Entry List</span></div>
+              <div className="terminal__body">
                 <EntriesPage
                   refreshToken={entriesRefreshToken}
                   onSelectEntry={(lineageId) => {
@@ -172,33 +187,19 @@ export function App() {
                   }}
                 />
               </div>
-            </div>
-            <div className="pane">
-              <div className="pane-header">Entry Detail</div>
-              <div className="panel">
-                {selectedLineageId ? (
-                  <EntryDetailPage
-                    lineageId={selectedLineageId}
-                    csrfToken={csrfToken}
-                    onDeleted={() => {
-                      setSelectedLineageId(null);
-                      setEntriesRefreshToken((value) => value + 1);
-                    }}
-                  />
-                ) : (
-                  <p>Select an entry to view details and history.</p>
-                )}
-              </div>
-            </div>
-          </section>
+            </section>
+          )
         ) : null}
 
         {tab === "new" ? (
-          <section className="pane">
-            <div className="pane-header">Create New Entry</div>
-            <div className="panel">
-              <label>
-                Entry Type
+          <section className="cyber-card cyber-card--terminal">
+            <div className="terminal__bar"><span className="terminal__title">Create New Entry</span></div>
+            <div className="terminal__body">
+              <label className="cyber-label">
+                <span className="dot"></span> Entry Type
+              </label>
+              <div className="cyber-input">
+                <span className="cyber-input__prefix">&gt;</span>
                 <select
                   value={newEntryType}
                   onChange={(event) =>
@@ -222,7 +223,7 @@ export function App() {
                   <option value="lesson">lesson — distilled learning</option>
                   <option value="skill">skill — reusable instructions</option>
                 </select>
-              </label>
+              </div>
 
               <EntryEditor
                 submitLabel="Create Entry"
@@ -265,45 +266,45 @@ export function App() {
         ) : null}
 
         {tab === "agents" ? (
-          <section className="pane">
-            <div className="pane-header">Portable Agents</div>
-            <div className="panel">
+          <section className="cyber-card cyber-card--terminal">
+            <div className="terminal__bar"><span className="terminal__title">Portable Agents</span></div>
+            <div className="terminal__body">
               <AgentsPage csrfToken={csrfToken} />
             </div>
           </section>
         ) : null}
 
         {tab === "proposals" ? (
-          <section className="pane">
-            <div className="pane-header">Skill Proposals</div>
-            <div className="panel">
+          <section className="cyber-card cyber-card--terminal">
+            <div className="terminal__bar"><span className="terminal__title">Skill Proposals</span></div>
+            <div className="terminal__body">
               <ProposalsPage csrfToken={csrfToken} />
             </div>
           </section>
         ) : null}
 
         {tab === "dashboard" ? (
-          <section className="pane">
-            <div className="pane-header">Skills Dashboard</div>
-            <div className="panel">
+          <section className="cyber-card cyber-card--terminal">
+            <div className="terminal__bar"><span className="terminal__title">Skills Dashboard</span></div>
+            <div className="terminal__body">
               <SkillsDashboardPage />
             </div>
           </section>
         ) : null}
 
         {tab === "keys" ? (
-          <section className="pane">
-            <div className="pane-header">API Key Management</div>
-            <div className="panel">
+          <section className="cyber-card cyber-card--terminal">
+            <div className="terminal__bar"><span className="terminal__title">API Key Management</span></div>
+            <div className="terminal__body">
               <ApiKeysPage csrfToken={csrfToken} />
             </div>
           </section>
         ) : null}
 
         {tab === "howto" ? (
-          <section className="pane">
-            <div className="pane-header">How-To</div>
-            <div className="panel">
+          <section className="cyber-card cyber-card--terminal">
+            <div className="terminal__bar"><span className="terminal__title">How-To</span></div>
+            <div className="terminal__body">
               <HowToPage />
             </div>
           </section>

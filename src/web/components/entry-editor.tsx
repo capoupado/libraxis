@@ -70,52 +70,46 @@ export function EntryEditor({
         }
       }}
     >
-      <label>
-        Title
-        <div className="input-group">
-          <input
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              setSubmitError(null);
-            }}
-          />
-          <span className="blinking-cursor" />
-        </div>
-      </label>
+      <label className="cyber-label"><span className="dot"></span> Title</label>
+      <div className="cyber-input">
+        <span className="cyber-input__prefix">&gt;</span>
+        <input
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setSubmitError(null);
+          }}
+        />
+      </div>
 
-      <label>
-        Tags (comma-separated)
-        <div className="input-group">
-          <input
-            value={tagInput}
-            onChange={(event) => {
-              setTagInput(event.target.value);
-              setSubmitError(null);
-            }}
-          />
-          <span className="blinking-cursor" />
-        </div>
-      </label>
+      <label className="cyber-label"><span className="dot"></span> Tags (comma-separated)</label>
+      <div className="cyber-input">
+        <span className="cyber-input__prefix">&gt;</span>
+        <input
+          value={tagInput}
+          onChange={(event) => {
+            setTagInput(event.target.value);
+            setSubmitError(null);
+          }}
+        />
+      </div>
 
-      <label>
-        Markdown
-        <div className="input-group">
-          <textarea
-            rows={14}
-            value={bodyMarkdown}
-            onChange={(event) => {
-              setBodyMarkdown(event.target.value);
-              setSubmitError(null);
-            }}
-          />
-          <span className="blinking-cursor" />
-        </div>
-      </label>
+      <label className="cyber-label"><span className="dot"></span> Markdown</label>
+      <div className="cyber-input cyber-input--area">
+        <span className="cyber-input__prefix">&gt;</span>
+        <textarea
+          rows={14}
+          value={bodyMarkdown}
+          onChange={(event) => {
+            setBodyMarkdown(event.target.value);
+            setSubmitError(null);
+          }}
+        />
+      </div>
 
       {submitError ? <p role="alert">{submitError}</p> : null}
 
-      <button type="submit" disabled={disabled}>
+      <button type="submit" className="cyber-btn cyber-btn--glitch" disabled={disabled}>
         {saving ? "Saving..." : submitLabel}
       </button>
     </form>

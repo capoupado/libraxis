@@ -117,35 +117,39 @@ export function AgentsPage({ csrfToken }: AgentsPageProps) {
           }
         }}
       >
-        <label>
-          Agent Title
+        <label className="cyber-label"><span className="dot"></span> Agent Title</label>
+        <div className="cyber-input">
+          <span className="cyber-input__prefix">&gt;</span>
           <input value={title} onChange={(event) => setTitle(event.target.value)} />
-        </label>
+        </div>
 
-        <label>
-          Tags (comma-separated)
+        <label className="cyber-label"><span className="dot"></span> Tags (comma-separated)</label>
+        <div className="cyber-input">
+          <span className="cyber-input__prefix">&gt;</span>
           <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} />
-        </label>
+        </div>
 
-        <label>
-          Agent Instructions (Markdown)
+        <label className="cyber-label"><span className="dot"></span> Agent Instructions (Markdown)</label>
+        <div className="cyber-input cyber-input--area">
+          <span className="cyber-input__prefix">&gt;</span>
           <textarea
             rows={10}
             value={bodyMarkdown}
             onChange={(event) => setBodyMarkdown(event.target.value)}
           />
-        </label>
+        </div>
 
-        <label>
-          Metadata JSON
+        <label className="cyber-label"><span className="dot"></span> Metadata JSON</label>
+        <div className="cyber-input cyber-input--area">
+          <span className="cyber-input__prefix">&gt;</span>
           <textarea
             rows={6}
             value={metadataJson}
             onChange={(event) => setMetadataJson(event.target.value)}
           />
-        </label>
+        </div>
 
-        <button type="submit" disabled={submitting}>
+        <button type="submit" className="cyber-btn cyber-btn--glitch" disabled={submitting}>
           {submitting ? "Uploading..." : "Upload Agent"}
         </button>
       </form>
@@ -162,6 +166,7 @@ export function AgentsPage({ csrfToken }: AgentsPageProps) {
             <div>
               <button
                 type="button"
+                className="cyber-btn cyber-btn--outline cyber-btn--sm"
                 disabled={loadingAgentId === item.lineage_id}
                 onClick={async () => {
                   setLoadingAgentId(item.lineage_id);
@@ -187,7 +192,7 @@ export function AgentsPage({ csrfToken }: AgentsPageProps) {
 
               <button
                 type="button"
-                className="error"
+                className="cyber-btn cyber-btn--secondary cyber-btn--sm"
                 disabled={deletingAgentId === item.lineage_id}
                 onClick={async () => {
                   if (!window.confirm(`Archive agent \"${item.title}\"?`)) {

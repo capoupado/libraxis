@@ -108,17 +108,19 @@ export function ApiKeysPage({ csrfToken }: ApiKeysPageProps) {
           }
         }}
       >
-        <label>
-          Name
+        <label className="cyber-label"><span className="dot"></span> Name</label>
+        <div className="cyber-input">
+          <span className="cyber-input__prefix">&gt;</span>
           <input value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
+        </div>
 
-        <label>
-          Scopes
+        <label className="cyber-label"><span className="dot"></span> Scopes</label>
+        <div className="cyber-input">
+          <span className="cyber-input__prefix">&gt;</span>
           <input value={scopes} onChange={(event) => setScopes(event.target.value)} />
-        </label>
+        </div>
 
-        <button type="submit" disabled={submitting}>
+        <button type="submit" className="cyber-btn cyber-btn--glitch" disabled={submitting}>
           {submitting ? "Creating..." : "Create API Key"}
         </button>
       </form>
@@ -130,6 +132,7 @@ export function ApiKeysPage({ csrfToken }: ApiKeysPageProps) {
           <div>
             <button
               type="button"
+              className="cyber-btn cyber-btn--sm"
               onClick={async () => {
                 try {
                   if (!navigator.clipboard?.writeText) {
@@ -147,6 +150,7 @@ export function ApiKeysPage({ csrfToken }: ApiKeysPageProps) {
             </button>
             <button
               type="button"
+              className="cyber-btn cyber-btn--outline cyber-btn--sm"
               onClick={() => {
                 setLatestPlaintext(null);
                 setStatusMessage("API key hidden.");
@@ -164,6 +168,7 @@ export function ApiKeysPage({ csrfToken }: ApiKeysPageProps) {
             {key.name} [{key.scopes.join(",")}], revoked: {String(key.is_revoked)}
             <button
               type="button"
+              className="cyber-btn cyber-btn--secondary cyber-btn--sm"
               disabled={revokingId === key.id}
               onClick={async () => {
                 setError(null);

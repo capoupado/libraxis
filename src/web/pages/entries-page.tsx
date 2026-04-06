@@ -67,26 +67,32 @@ export function EntriesPage({ onSelectEntry, refreshToken = 0 }: EntriesPageProp
   return (
     <section>
       <h2>Entries</h2>
-      <input
-        placeholder="Search entries"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
+      <div className="cyber-input">
+        <span className="cyber-input__prefix">&gt;</span>
+        <input
+          placeholder="Search entries"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
 
       {loading ? <p role="status">Loading entries...</p> : null}
       {error ? <p role="alert">{error}</p> : null}
       {showEmpty ? <p>{emptyMessage}</p> : null}
 
-      <ul>
+      <div>
         {items.map((item) => (
-          <li key={item.id}>
-            <button type="button" onClick={() => onSelectEntry(item.lineage_id)}>
-              {item.title} ({item.type})
-              {item.tags.length > 0 ? ` [${item.tags.join(", ")}]` : " [no tags]"}
-            </button>
-          </li>
+          <button
+            key={item.id}
+            type="button"
+            className="entry-item"
+            onClick={() => onSelectEntry(item.lineage_id)}
+          >
+            {item.title} ({item.type})
+            {item.tags.length > 0 ? ` [${item.tags.join(", ")}]` : " [no tags]"}
+          </button>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }
