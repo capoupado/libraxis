@@ -1,4 +1,4 @@
-![Libraxis](https://i.imgur.com/KkUnuxv.png)
+![Libraxis](https://i.imgur.com/cSobe7y.png)
 
 # Libraxis
 
@@ -27,10 +27,11 @@ Libraxis is a self-hosted backend for storing, retrieving, and evolving knowledg
 <p align="center">
 
 <!-- SCREENSHOT: Web UI – dashboard / entry list -->
-![WebUI](https://i.imgur.com/ldESpPY.png)
+![WebUI](https://i.imgur.com/EtNoblr.png)
 
 <!-- SCREENSHOT: MCP tool in action (e.g. Claude Desktop) -->
-![MCP](https://i.imgur.com/wArKMvO.png) ![MCP2](https://i.imgur.com/kkfP18c.png)
+![MCP](https://i.imgur.com/au1MCRz.png) 
+![MCP2](https://i.imgur.com/6fogOJA.png)
 
 </p>
 

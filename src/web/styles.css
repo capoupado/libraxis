@@ -426,6 +426,10 @@ h1, h2, h3, h4, h5, h6 {
   resize: vertical;
   width: 100%;
 }
+.cyber-input select:open { 
+  color: var(--accent); 
+  background-color: var(--input);
+}
 .cyber-input input::placeholder,
 .cyber-input textarea::placeholder { color: var(--muted-fg); }
 
