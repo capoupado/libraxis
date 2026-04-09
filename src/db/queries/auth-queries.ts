@@ -10,6 +10,8 @@ export interface ApiKeyRow {
   is_revoked: number;
   created_at: string;
   last_used_at: string | null;
+  expires_at: string | null;
+  oauth_client_id: string | null;
 }
 
 export interface WebSessionRow {
@@ -24,15 +26,21 @@ export interface CreateApiKeyInput {
   name: string;
   keyHash: string;
   scopes: string;
+  expiresAt?: string;
+  oauthClientId?: string;
 }
 
 export function createApiKey(db: Database.Database, input: CreateApiKeyInput): string {
   const id = ulid();
-  db.prepare("INSERT INTO api_keys(id, name, key_hash, scopes) VALUES (?, ?, ?, ?)").run(
+  db.prepare(
+    "INSERT INTO api_keys(id, name, key_hash, scopes, expires_at, oauth_client_id) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(
     id,
     input.name,
     input.keyHash,
-    input.scopes
+    input.scopes,
+    input.expiresAt ?? null,
+    input.oauthClientId ?? null
   );
   return id;
 }
@@ -47,8 +55,14 @@ export function getApiKeyById(db: Database.Database, id: string): ApiKeyRow | un
 
 export function getActiveApiKeyByHash(db: Database.Database, keyHash: string): ApiKeyRow | undefined {
   return db
-    .prepare<[string], ApiKeyRow>("SELECT * FROM api_keys WHERE key_hash = ? AND is_revoked = 0")
+    .prepare<[string], ApiKeyRow>(
+      "SELECT * FROM api_keys WHERE key_hash = ? AND is_revoked = 0 AND (expires_at IS NULL OR expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+    )
     .get(keyHash);
+}
+
+export function revokeApiKeysByClientId(db: Database.Database, clientId: string): void {
+  db.prepare("UPDATE api_keys SET is_revoked = 1 WHERE oauth_client_id = ?").run(clientId);
 }
 
 export function getApiKeyByName(db: Database.Database, name: string): ApiKeyRow | undefined {

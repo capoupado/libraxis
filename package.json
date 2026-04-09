@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run --passWithNoTests",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && cp src/db/migrations/*.sql dist/src/db/migrations/",
     "dev": "tsx watch src/index.ts",
     "mcp:dev": "tsx src/mcp/stdio-server.ts",
     "web:dev": "vite --config vite.config.ts",
@@ -28,6 +28,7 @@
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/csrf-protection": "^7.1.0",
+    "@fastify/express": "^4.0.4",
     "@fastify/formbody": "^8.0.2",
     "@fastify/helmet": "^13.0.2",
     "@fastify/sensible": "^6.0.4",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
     "@types/jsdom": "^28.0.1",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",

@@ -4,6 +4,7 @@ import { registerAdminRoutes } from "./api/routes/admin-routes.js";
 import { registerAgentsRoutes } from "./api/routes/agents-routes.js";
 import { registerEntriesRoutes } from "./api/routes/entries-routes.js";
 import { registerMcpRoutes } from "./api/routes/mcp-routes.js";
+import { registerOAuthRoutes } from "./api/routes/oauth-mount.js";
 import { registerOwnerEntriesRoutes } from "./api/routes/owner-entries-routes.js";
 import { registerProposalsRoutes } from "./api/routes/proposals-routes.js";
 import { registerSkillsRoutes } from "./api/routes/skills-routes.js";
@@ -16,6 +17,7 @@ async function main(): Promise<void> {
 
   const app = await buildHttpServer();
 
+  await registerOAuthRoutes(app, db);
   await registerSkillsRoutes(app, db);
   await registerAgentsRoutes(app, db);
   await registerMcpRoutes(app, db);

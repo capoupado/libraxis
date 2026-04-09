@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import sensible from "@fastify/sensible";
 import formbody from "@fastify/formbody";
+import fastifyExpress from "@fastify/express";
 
 import { isDomainError } from "../service/errors.js";
 import { registerSecurityMiddleware } from "./middleware/security.js";
@@ -10,6 +11,7 @@ import { registerSecurityMiddleware } from "./middleware/security.js";
 export async function buildHttpServer() {
   const app = fastify({ logger: true });
 
+  await app.register(fastifyExpress);
   await app.register(sensible);
   await app.register(cors, { origin: false });
   await app.register(cookie);

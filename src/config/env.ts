@@ -12,7 +12,11 @@ const rawEnvSchema = z
     LIBRAXIS_ADMIN_PASSWORD: z.string().min(1).default("change-me"),
     LIBRAXIS_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(7),
     LIBRAXIS_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
-    LIBRAXIS_MCP_API_KEY: z.string().default("")
+    LIBRAXIS_MCP_API_KEY: z.string().default(""),
+    LIBRAXIS_PUBLIC_URL: z.string().url().optional(),
+    LIBRAXIS_OAUTH_CODE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+    LIBRAXIS_OAUTH_ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(60),
+    LIBRAXIS_OAUTH_REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30)
   })
   .superRefine((value, ctx) => {
     const hasDefaultCredentials =
@@ -32,7 +36,9 @@ const envSchema = rawEnvSchema.transform((value) => ({
   LIBRAXIS_COOKIE_SECURE:
     value.LIBRAXIS_COOKIE_SECURE !== undefined
       ? value.LIBRAXIS_COOKIE_SECURE === "true"
-      : value.NODE_ENV === "production"
+      : value.NODE_ENV === "production",
+  LIBRAXIS_PUBLIC_URL:
+    value.LIBRAXIS_PUBLIC_URL ?? `http://localhost:${value.PORT}`
 }));
 
 export function parseEnv(input: NodeJS.ProcessEnv) {
