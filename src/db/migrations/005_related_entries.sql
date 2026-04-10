@@ -9,11 +9,11 @@ CREATE TABLE IF NOT EXISTS suggested_links (
   generated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   CHECK (source_entry_id <> target_entry_id)
 );
-CREATE UNIQUE INDEX ux_suggested_links_triple
+CREATE UNIQUE INDEX IF NOT EXISTS ux_suggested_links_triple
   ON suggested_links(source_entry_id, target_entry_id, signal);
-CREATE INDEX ix_suggested_links_source
+CREATE INDEX IF NOT EXISTS ix_suggested_links_source
   ON suggested_links(source_entry_id, score DESC);
-CREATE INDEX ix_suggested_links_target
+CREATE INDEX IF NOT EXISTS ix_suggested_links_target
   ON suggested_links(target_entry_id);
 
 CREATE INDEX IF NOT EXISTS ix_entry_links_relation_type
