@@ -198,7 +198,6 @@ export function getEntryGraph(
   const edgeMap = new Map<string, GraphEdge>();
 
   // 1. Process explicit edges first
-  const rootHydrated = hydratedMap.get(rootEntryId);
   for (const row of explicitEdgeRows) {
     const srcHydrated = hydratedMap.get(row.source_entry_id);
     const tgtHydrated = hydratedMap.get(row.target_entry_id);
