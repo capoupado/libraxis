@@ -22,7 +22,7 @@ function loadEntryType(db: Database.Database, entryId: string): EntryTypeRow {
   return row;
 }
 
-function validateDirection(
+export function validateDirection(
   relationType: string,
   sourceType: EntryTypeRow["type"],
   targetType: EntryTypeRow["type"]

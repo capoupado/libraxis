@@ -12,8 +12,17 @@ import {
 } from "../db/queries/entry-queries.js";
 import { listTagsForEntry } from "../db/queries/tag-queries.js";
 import { DomainError } from "./errors.js";
+import { suggestRelations } from "./related.js";
 import { attachTags } from "./tags.js";
 import { evaluateContentLimits } from "./validation/content-limits.js";
+
+// Minimal logger shim — replace with pino/winston if the project adopts one.
+const logger = {
+  warn: (obj: Record<string, unknown>, msg: string) => {
+    // eslint-disable-next-line no-console
+    console.warn(msg, obj);
+  },
+};
 
 export interface CreateEntryInput {
   type: EntryType;
@@ -95,6 +104,12 @@ export function createEntry(db: Database.Database, input: CreateEntryInput): Ent
 
   writeTransaction();
 
+  try {
+    suggestRelations(db, entryId);
+  } catch (err) {
+    logger.warn({ err }, "suggestRelations failed silently");
+  }
+
   return {
     entry_id: entryId,
     lineage_id: lineageId,
@@ -159,6 +174,12 @@ export function updateEntry(db: Database.Database, input: UpdateEntryInput): Ent
   });
 
   writeTransaction();
+
+  try {
+    suggestRelations(db, newEntryId);
+  } catch (err) {
+    logger.warn({ err }, "suggestRelations failed silently");
+  }
 
   return {
     entry_id: newEntryId,
