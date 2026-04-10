@@ -39,7 +39,7 @@ export interface EntryGraph {
 
 export interface GetEntryGraphOptions {
   depth?: number;
-  signals?: string[];
+  signals?: Array<'explicit' | 'tag' | 'fts'>;
   relationTypes?: string[];
   direction?: "out" | "in" | "both";
   limit?: number;
@@ -224,7 +224,7 @@ export function getEntryGraph(
   }
 
   // 2. Tag edges (only if no explicit edge already covers this pair)
-  if (signals.includes("tag") && rootHydrated) {
+  if (signals.includes("tag")) {
     for (const node of nodes) {
       if (!tagScores.has(node.entry_id)) continue;
       const jaccard = tagScores.get(node.entry_id)!;
@@ -243,7 +243,7 @@ export function getEntryGraph(
   }
 
   // 3. FTS edges (only if no explicit or tag edge already covers this pair)
-  if (signals.includes("fts") && rootHydrated) {
+  if (signals.includes("fts")) {
     for (const node of nodes) {
       if (!ftsScores.has(node.entry_id)) continue;
       const score = ftsScores.get(node.entry_id)!;
@@ -276,19 +276,21 @@ export function getBacklinks(db: Database.Database, entryId: string): GraphNode[
   const sourceIds = incomingLinks.map((l) => l.source_entry_id);
   const hydratedMap = hydrateEntries(db, sourceIds);
 
-  const nodes: GraphNode[] = [];
+  const nodesByLineage = new Map<string, GraphNode>();
   for (const link of incomingLinks) {
     const hydrated = hydratedMap.get(link.source_entry_id);
     if (!hydrated) continue;
-    nodes.push({
-      lineage_id: hydrated.lineage_id,
-      entry_id: hydrated.id,
-      title: hydrated.title,
-      type: hydrated.type,
-      depth: 1,
-    });
+    if (!nodesByLineage.has(hydrated.lineage_id)) {
+      nodesByLineage.set(hydrated.lineage_id, {
+        lineage_id: hydrated.lineage_id,
+        entry_id: hydrated.id,
+        title: hydrated.title,
+        type: hydrated.type,
+        depth: 1,
+      });
+    }
   }
-  return nodes;
+  return Array.from(nodesByLineage.values());
 }
 
 // ─── suggestRelations ─────────────────────────────────────────────────────────
@@ -361,13 +363,16 @@ export function promoteSuggestion(
     )
     .get(row.target_entry_id);
 
-  if (sourceRow && targetRow) {
-    validateDirection(
-      relationType,
-      sourceRow.type as Parameters<typeof validateDirection>[1],
-      targetRow.type as Parameters<typeof validateDirection>[2]
+  if (!sourceRow || !targetRow) {
+    throw new Error(
+      `Cannot promote suggestion ${suggestedLinkId}: one or both linked entries no longer exist`
     );
   }
+  validateDirection(
+    relationType,
+    sourceRow.type as Parameters<typeof validateDirection>[1],
+    targetRow.type as Parameters<typeof validateDirection>[2]
+  );
 
   return promoteSuggestedLink(db, suggestedLinkId, relationType, createdBy);
 }
