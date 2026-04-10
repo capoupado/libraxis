@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { EntryEditor } from "../components/entry-editor.js";
 import { MarkdownView } from "../components/markdown-view.js";
@@ -62,8 +62,11 @@ function BacklinksSection({
           setNodes((data.nodes ?? []).filter((n) => n.lineage_id !== lineageId));
           setLoaded(true);
         }
-      } catch {
-        if (!controller.signal.aborted) setLoaded(true);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to load backlinks:', err);
+          setLoaded(true);
+        }
       }
     };
     void load();
@@ -104,6 +107,14 @@ function SuggestedLinksSection({
   const [relationTypes, setRelationTypes] = useState<Record<string, string>>({});
   const [promoting, setPromoting] = useState<string | null>(null);
   const [promoteError, setPromoteError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const loadSuggestions = async (signal?: AbortSignal) => {
     try {
@@ -112,7 +123,7 @@ function SuggestedLinksSection({
         signal ? { signal } : {},
         "Failed to load suggested links."
       );
-      if (!signal?.aborted) {
+      if (!signal?.aborted && mountedRef.current) {
         const items = data.suggestions ?? [];
         setSuggestions(items);
         const defaults: Record<string, string> = {};
@@ -123,7 +134,7 @@ function SuggestedLinksSection({
         setLoaded(true);
       }
     } catch {
-      if (!signal?.aborted) setLoaded(true);
+      if (!signal?.aborted && mountedRef.current) setLoaded(true);
     }
   };
 
@@ -179,11 +190,14 @@ function SuggestedLinksSection({
                     },
                     "Failed to promote link."
                   );
-                  await loadSuggestions();
+                  if (mountedRef.current) {
+                    setRelationTypes(prev => { const next = {...prev}; delete next[s.id]; return next; });
+                    await loadSuggestions();
+                  }
                 } catch (err) {
-                  setPromoteError(getErrorMessage(err, "Failed to promote link."));
+                  if (mountedRef.current) setPromoteError(getErrorMessage(err, "Failed to promote link."));
                 } finally {
-                  setPromoting(null);
+                  if (mountedRef.current) setPromoting(null);
                 }
               }}
             >

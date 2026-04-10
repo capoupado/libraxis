@@ -272,7 +272,6 @@ export function App() {
             selectedLineageId={selectedLineageId}
             setSelectedLineageId={setSelectedLineageId}
             setTab={setTab}
-            csrfToken={csrfToken}
           />
         ) : null}
 

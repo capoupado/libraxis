@@ -42,7 +42,6 @@ export interface GraphPageProps {
   selectedLineageId: string | null;
   setSelectedLineageId: (id: string) => void;
   setTab: (tab: string) => void;
-  csrfToken: string | null;
 }
 
 function nodeColor(type: string): string {
@@ -70,6 +69,7 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
   const [globalMode, setGlobalMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [svgDimensions, setSvgDimensions] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch graph data when mode or selectedLineageId changes
@@ -111,6 +111,17 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
     return () => controller.abort();
   }, [globalMode, selectedLineageId]);
 
+  // ResizeObserver to reactively update SVG dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      if (width > 0) setSvgDimensions({ width, height: Math.max(height, 400) });
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   // Run d3-force simulation when graph data changes
   useEffect(() => {
     if (!graphData || graphData.nodes.length === 0) {
@@ -118,8 +129,8 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
       return;
     }
 
-    const width = containerRef.current?.clientWidth ?? SVG_WIDTH;
-    const height = SVG_HEIGHT;
+    const width = svgDimensions.width;
+    const height = svgDimensions.height;
 
     const nodePositions: SimNode[] = graphData.nodes.map((n) => ({
       id: n.lineage_id,
@@ -142,8 +153,12 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
       .force("charge", forceManyBody<SimNode>().strength(-200))
       .force("center", forceCenter(width / 2, height / 2));
 
+    let rafId: number;
     simulation.on("tick", () => {
-      setPositions([...nodePositions]);
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setPositions([...nodePositions]);
+      });
     });
 
     // Stop after reasonable time to avoid infinite ticking
@@ -152,9 +167,10 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
     });
 
     return () => {
+      cancelAnimationFrame(rafId);
       simulation.stop();
     };
-  }, [graphData]);
+  }, [graphData, svgDimensions]);
 
   // Compute degree map for node sizing
   const degreeMap = new Map<string, number>();
@@ -226,8 +242,8 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
         )}
 
         {!loading && !loadError && graphData && positions.length > 0 && (() => {
-          const width = containerRef.current?.clientWidth ?? SVG_WIDTH;
-          const height = SVG_HEIGHT;
+          const width = svgDimensions.width;
+          const height = svgDimensions.height;
 
           return (
             <svg
@@ -238,13 +254,13 @@ export function GraphPage({ selectedLineageId, setSelectedLineageId, setTab }: G
             >
               {/* Edges */}
               <g>
-                {graphData.edges.map((edge, i) => {
+                {graphData.edges.map((edge) => {
                   const src = posMap.get(edge.source_lineage_id);
                   const tgt = posMap.get(edge.target_lineage_id);
                   if (!src || !tgt) return null;
                   return (
                     <line
-                      key={i}
+                      key={`${edge.source_lineage_id}:${edge.target_lineage_id}`}
                       x1={src.x}
                       y1={src.y}
                       x2={tgt.x}
