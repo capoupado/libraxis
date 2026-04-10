@@ -90,6 +90,51 @@ export function listEntryHistory(db: Database.Database, lineageId: string): Entr
     .all(lineageId);
 }
 
+export interface FtsSearchResult {
+  id: string;
+  lineage_id: string;
+  type: EntryType;
+  title: string;
+  body_markdown: string;
+  score: number;
+}
+
+export function searchEntriesFts(
+  db: Database.Database,
+  query: string,
+  opts?: { types?: string[]; limit?: number }
+): FtsSearchResult[] {
+  const sanitized = query.replace(/[^\w\s]/g, " ").trim();
+  if (!sanitized) return [];
+
+  const limit = opts?.limit ?? 20;
+  const types = opts?.types;
+
+  let typeFilter = "";
+  const typeParams: string[] = [];
+  if (types && types.length > 0) {
+    const placeholders = types.map(() => "?").join(", ");
+    typeFilter = `AND e.type IN (${placeholders})`;
+    typeParams.push(...types);
+  }
+
+  const sql = `
+    SELECT e.id, e.lineage_id, e.title, e.type, e.body_markdown,
+           -bm25(entries_fts) AS score
+    FROM entries_fts f
+    JOIN entries e ON e.rowid = f.rowid
+    WHERE entries_fts MATCH ?
+      AND e.is_latest = 1
+      ${typeFilter}
+    ORDER BY score DESC
+    LIMIT ?
+  `;
+
+  return db
+    .prepare<(string | number)[], FtsSearchResult>(sql)
+    .all(sanitized, ...typeParams, limit);
+}
+
 export function archiveEntryLineage(db: Database.Database, lineageId: string): number {
   const result = db
     .prepare(

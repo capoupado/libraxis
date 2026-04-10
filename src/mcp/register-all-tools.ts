@@ -6,6 +6,7 @@ import { registerAgentTools } from "./tools/agent-tools.js";
 import { registerContextTools } from "./tools/context-tools.js";
 import { registerEntryTools } from "./tools/entry-tools.js";
 import { registerProposalTools } from "./tools/proposal-tools.js";
+import { registerRelatedTools } from "./tools/related-tools.js";
 
 export function registerAllMcpTools(server: BaseMcpServer, db: Database.Database): void {
   registerContextTools(server, db);
@@ -13,4 +14,5 @@ export function registerAllMcpTools(server: BaseMcpServer, db: Database.Database
   registerEntryTools(server, db);
   registerProposalTools(server, db);
   registerAdminTools(server, db);
+  registerRelatedTools(server, db);
 }
