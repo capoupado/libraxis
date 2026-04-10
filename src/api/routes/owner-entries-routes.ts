@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 
 import {
   enforceCsrf,
@@ -19,12 +20,18 @@ import {
   ownerEntriesQuerySchema,
   ownerLoginSchema,
   parseOrThrow,
+  relationSchema,
   updateEntrySchema
 } from "../../service/validation/schemas.js";
 import { env } from "../../config/env.js";
 import { getEntryGraph, promoteSuggestion } from "../../service/related.js";
 import { getLatestEntryByLineage } from "../../db/queries/entry-queries.js";
 import { listSuggestedLinks } from "../../db/queries/link-queries.js";
+
+const depthSchema = z.coerce.number().int().min(1).max(10).catch(2);
+const limitSchema = z.coerce.number().int().min(1).max(500).catch(200);
+const validSignals = ["explicit", "tag", "fts"] as const;
+const promoteSchema = z.object({ relation_type: relationSchema });
 
 interface SearchQuery {
   q?: string;
@@ -163,13 +170,16 @@ export async function registerOwnerEntriesRoutes(
       requireOwnerSession(request, reply, db);
 
       const { lineageId } = request.params;
-      const depth = request.query.depth !== undefined ? Number(request.query.depth) : 2;
-      const signals = request.query.signals
-        ? (request.query.signals.split(",").map((s) => s.trim()) as Array<"explicit" | "tag" | "fts">)
-        : (["explicit", "tag", "fts"] as Array<"explicit" | "tag" | "fts">);
+      const depth = depthSchema.parse(request.query.depth);
+      const raw = request.query.signals;
+      const rawSignals = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : ["explicit", "tag", "fts"];
+      const signals = rawSignals.filter((s): s is typeof validSignals[number] =>
+        (validSignals as readonly string[]).includes(s)
+      );
       const direction = (request.query.direction ?? "both") as "out" | "in" | "both";
-      const relationTypes = request.query.relation_types
-        ? request.query.relation_types.split(",").map((s) => s.trim())
+      const rawRelTypes = request.query.relation_types;
+      const relationTypes = rawRelTypes
+        ? rawRelTypes.split(",").map((s) => s.trim()).filter(Boolean)
         : undefined;
 
       return getEntryGraph(db, lineageId, { depth, signals, direction, relationTypes });
@@ -179,8 +189,7 @@ export async function registerOwnerEntriesRoutes(
   app.get<{ Querystring: GlobalGraphQuery }>("/owner/graph", async (request, reply) => {
     requireOwnerSession(request, reply, db);
 
-    const rawLimit = request.query.limit !== undefined ? Number(request.query.limit) : 200;
-    const limit = Math.min(rawLimit, 500);
+    const limit = limitSchema.parse(request.query.limit);
 
     // Step 1: fetch top-N entries by combined link degree
     interface DegreeRow {
@@ -197,7 +206,7 @@ export async function registerOwnerEntriesRoutes(
          FROM entries e
          LEFT JOIN entry_links el
            ON el.source_entry_id = e.id OR el.target_entry_id = e.id
-         WHERE e.is_latest = 1
+         WHERE e.is_latest = 1 AND e.status = 'active'
          GROUP BY e.id
          ORDER BY degree DESC
          LIMIT ?`
@@ -282,19 +291,18 @@ export async function registerOwnerEntriesRoutes(
       enforceCsrf(request, session);
 
       const { id } = request.params;
-      const { relation_type } = request.body ?? {};
-
-      if (!relation_type) {
-        reply.status(400);
-        return { error: "relation_type is required" };
+      const parseResult = promoteSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.code(400).send({ error: "INVALID_INPUT", message: parseResult.error.message });
       }
+      const { relation_type } = parseResult.data;
 
       try {
         const linkId = promoteSuggestion(db, id, relation_type, "owner");
         return { link_id: linkId };
-      } catch (err) {
-        reply.status(400);
-        return { error: err instanceof Error ? err.message : String(err) };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return reply.code(400).send({ error: "VALIDATION_ERROR", message });
       }
     }
   );

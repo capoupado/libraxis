@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 
 import { createEntry, searchEntries, updateEntry } from "../../service/entries.js";
 import { linkEntries } from "../../service/links.js";
@@ -12,6 +13,9 @@ import {
 import { getEntryGraph } from "../../service/related.js";
 import { getLatestEntryByLineage } from "../../db/queries/entry-queries.js";
 import { listSuggestedLinks } from "../../db/queries/link-queries.js";
+
+const depthSchema = z.coerce.number().int().min(1).max(10).catch(2);
+const validSignals = ["explicit", "tag", "fts"] as const;
 
 interface UpdateParams {
   lineageId: string;
@@ -79,13 +83,16 @@ export async function registerEntriesRoutes(app: FastifyInstance, db: Database.D
     "/entries/:lineageId/graph",
     async (request) => {
       const { lineageId } = request.params;
-      const depth = request.query.depth !== undefined ? Number(request.query.depth) : 2;
-      const signals = request.query.signals
-        ? (request.query.signals.split(",").map((s) => s.trim()) as Array<"explicit" | "tag" | "fts">)
-        : (["explicit", "tag", "fts"] as Array<"explicit" | "tag" | "fts">);
+      const depth = depthSchema.parse(request.query.depth);
+      const raw = request.query.signals;
+      const rawSignals = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : ["explicit", "tag", "fts"];
+      const signals = rawSignals.filter((s): s is typeof validSignals[number] =>
+        (validSignals as readonly string[]).includes(s)
+      );
       const direction = (request.query.direction ?? "both") as "out" | "in" | "both";
-      const relationTypes = request.query.relation_types
-        ? request.query.relation_types.split(",").map((s) => s.trim())
+      const rawRelTypes = request.query.relation_types;
+      const relationTypes = rawRelTypes
+        ? rawRelTypes.split(",").map((s) => s.trim()).filter(Boolean)
         : undefined;
 
       return getEntryGraph(db, lineageId, { depth, signals, direction, relationTypes });
