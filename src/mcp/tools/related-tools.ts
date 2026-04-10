@@ -4,8 +4,7 @@ import { z } from "zod";
 import type { BaseMcpServer } from "../server.js";
 import { getEntryById, getLatestEntryByLineage, searchEntriesFts } from "../../db/queries/entry-queries.js";
 import { listOutgoingLinks, listIncomingLinks, listSuggestedLinks } from "../../db/queries/link-queries.js";
-import { getEntryGraph } from "../../service/related.js";
-import { promoteSuggestion } from "../../service/related.js";
+import { getEntryGraph, promoteSuggestion } from "../../service/related.js";
 import { searchEntries } from "../../service/entries.js";
 import { relationSchema } from "../../service/validation/schemas.js";
 
