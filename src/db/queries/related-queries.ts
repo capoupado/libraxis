@@ -62,12 +62,12 @@ export function findRelatedByFts(
   return db
     .prepare<[string, string, number], FtsRelatedRow>(
       `
-      SELECT e.id AS entry_id, bm25(entries_fts) AS score
+      SELECT e.id AS entry_id, -bm25(entries_fts) AS score
       FROM entries_fts
       JOIN entries e ON e.rowid = entries_fts.rowid
       WHERE entries_fts MATCH ?
         AND e.id <> ?
-      ORDER BY score
+      ORDER BY score DESC
       LIMIT ?
       `
     )

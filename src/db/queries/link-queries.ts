@@ -69,6 +69,13 @@ export interface TraversalNode {
   depth: number;
 }
 
+/**
+ * Result of a neighborhood traversal.
+ *
+ * NOTE: `nodes` includes the root node itself at depth=0, in addition to all
+ * reachable neighbors at depth ≥ 1. Callers that want only the neighbors
+ * should filter out entries where `depth === 0`.
+ */
 export interface TraversalResult {
   nodes: TraversalNode[];
   edges: EntryLinkRow[];
@@ -134,16 +141,39 @@ export function traverseNeighborhood(
     return { nodes: [], edges: [] };
   }
 
-  // Collect all discovered node ids to fetch spanning edges
+  // Collect all discovered node ids to fetch spanning edges,
+  // respecting the same direction + relationTypes filters.
   const nodeIds = nodes.map((n) => n.node_id);
   const edgePlaceholders = nodeIds.map(() => "?").join(", ");
+
+  let edgeDirectionClause: string;
+  let edgeDirectionParams: string[];
+  if (direction === "out") {
+    edgeDirectionClause = `source_entry_id IN (${edgePlaceholders})`;
+    edgeDirectionParams = [...nodeIds];
+  } else if (direction === "in") {
+    edgeDirectionClause = `target_entry_id IN (${edgePlaceholders})`;
+    edgeDirectionParams = [...nodeIds];
+  } else {
+    edgeDirectionClause = `(source_entry_id IN (${edgePlaceholders}) OR target_entry_id IN (${edgePlaceholders}))`;
+    edgeDirectionParams = [...nodeIds, ...nodeIds];
+  }
+
+  let edgeRelationFilter = "";
+  const edgeRelationParams: string[] = [];
+  if (relationTypes && relationTypes.length > 0) {
+    const placeholders = relationTypes.map(() => "?").join(", ");
+    edgeRelationFilter = `AND relation_type IN (${placeholders})`;
+    edgeRelationParams.push(...relationTypes);
+  }
+
   const edges = db
     .prepare<string[], EntryLinkRow>(
       `SELECT * FROM entry_links
-       WHERE source_entry_id IN (${edgePlaceholders})
-          OR target_entry_id IN (${edgePlaceholders})`
+       WHERE ${edgeDirectionClause}
+       ${edgeRelationFilter}`
     )
-    .all(...nodeIds, ...nodeIds);
+    .all(...edgeDirectionParams, ...edgeRelationParams);
 
   return { nodes, edges };
 }
@@ -220,9 +250,7 @@ export function promoteSuggestedLink(
   relationType: string,
   createdBy: string
 ): string {
-  let newLinkId = "";
-
-  const promote = db.transaction(() => {
+  const promote = db.transaction((): string => {
     const row = db
       .prepare<[string], SuggestedLinkRow>(`SELECT * FROM suggested_links WHERE id = ?`)
       .get(id);
@@ -231,7 +259,7 @@ export function promoteSuggestedLink(
       throw new Error(`Suggested link not found: ${id}`);
     }
 
-    newLinkId = createEntryLink(db, {
+    const newLinkId = createEntryLink(db, {
       sourceEntryId: row.source_entry_id,
       targetEntryId: row.target_entry_id,
       relationType,
@@ -239,8 +267,9 @@ export function promoteSuggestedLink(
     });
 
     db.prepare(`DELETE FROM suggested_links WHERE id = ?`).run(id);
+
+    return newLinkId;
   });
 
-  promote();
-  return newLinkId;
+  return promote();
 }
