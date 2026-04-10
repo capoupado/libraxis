@@ -5,13 +5,14 @@ import { EntryEditor } from "./components/entry-editor.js";
 import { ApiKeysPage } from "./pages/api-keys-page.js";
 import { EntriesPage } from "./pages/entries-page.js";
 import { EntryDetailPage } from "./pages/entry-detail-page.js";
+import { GraphPage } from "./pages/graph-page.js";
 import { HowToPage } from "./pages/how-to-page.js";
 import { LoginPage } from "./pages/login.js";
 import { ProposalsPage } from "./pages/proposals-page.js";
 import { SkillsDashboardPage } from "./pages/skills-dashboard-page.js";
 import { fetchJson, getErrorMessage } from "./lib/http-client.js";
 
-type TabKey = "entries" | "new" | "agents" | "proposals" | "dashboard" | "keys" | "howto";
+type TabKey = "entries" | "new" | "agents" | "proposals" | "dashboard" | "keys" | "howto" | "graph";
 
 
 export function App() {
@@ -29,6 +30,7 @@ export function App() {
   const tabs = useMemo(
     () => [
       { key: "entries" as const, label: "Entries" },
+      { key: "graph" as const, label: "Graph" },
       { key: "new" as const, label: "New Entry" },
       { key: "agents" as const, label: "Agents" },
       { key: "proposals" as const, label: "Proposals" },
@@ -263,6 +265,15 @@ export function App() {
               {feedback ? <p role="status">{feedback}</p> : null}
             </div>
           </section>
+        ) : null}
+
+        {tab === "graph" ? (
+          <GraphPage
+            selectedLineageId={selectedLineageId}
+            setSelectedLineageId={setSelectedLineageId}
+            setTab={setTab}
+            csrfToken={csrfToken}
+          />
         ) : null}
 
         {tab === "agents" ? (
