@@ -135,6 +135,28 @@ export function searchEntriesFts(
     .all(sanitized, ...typeParams, limit);
 }
 
+export interface LineageDiagnosis {
+  kind: "not_found" | "is_entry_id" | "orphan";
+  actualLineageId?: string;
+}
+
+export function diagnoseLineageLookup(
+  db: Database.Database,
+  candidate: string
+): LineageDiagnosis {
+  const byId = db
+    .prepare<string, { lineage_id: string }>("SELECT lineage_id FROM entries WHERE id = ? LIMIT 1")
+    .get(candidate);
+  if (byId) return { kind: "is_entry_id", actualLineageId: byId.lineage_id };
+
+  const anyVersion = db
+    .prepare<string, { id: string }>("SELECT id FROM entries WHERE lineage_id = ? LIMIT 1")
+    .get(candidate);
+  if (anyVersion) return { kind: "orphan" };
+
+  return { kind: "not_found" };
+}
+
 export function archiveEntryLineage(db: Database.Database, lineageId: string): number {
   const result = db
     .prepare(

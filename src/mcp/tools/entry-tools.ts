@@ -15,8 +15,10 @@ const createEntrySchema = z.object({
   created_by: z.string().min(1).default("agent")
 });
 
+const ulidLike = z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/, "Must be a 26-char Crockford ULID");
+
 const updateEntrySchema = z.object({
-  lineage_id: z.string().min(1),
+  lineage_id: ulidLike,
   expected_version: z.number().int().positive(),
   body_markdown: z.string().min(1),
   title: z.string().optional(),

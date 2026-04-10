@@ -4,6 +4,7 @@ import { ulid } from "ulid";
 import {
   archiveEntryLineage,
   createEntry as createEntryRow,
+  diagnoseLineageLookup,
   getLatestEntryByLineage,
   listEntryHistory,
   markPreviousVersionsNotLatest,
@@ -123,6 +124,21 @@ export function updateEntry(db: Database.Database, input: UpdateEntryInput): Ent
   const latest = getLatestEntryByLineage(db, input.lineage_id);
 
   if (!latest) {
+    const diagnosis = diagnoseLineageLookup(db, input.lineage_id);
+    if (diagnosis.kind === "is_entry_id") {
+      throw new DomainError(
+        "ENTRY_NOT_FOUND",
+        `Provided value is an entry_id, not a lineage_id. Correct lineage_id: ${diagnosis.actualLineageId}`,
+        "Re-call with lineage_id from the original create_entry response (NOT entry_id)."
+      );
+    }
+    if (diagnosis.kind === "orphan") {
+      throw new DomainError(
+        "ENTRY_NOT_FOUND",
+        `Lineage ${input.lineage_id} has no head row (is_latest=1). Possible corrupt state.`,
+        "Inspect entries table and file a bug."
+      );
+    }
     throw new DomainError("ENTRY_NOT_FOUND", `Lineage not found: ${input.lineage_id}`);
   }
 
@@ -200,6 +216,21 @@ export function archiveEntry(db: Database.Database, lineageId: string): EntryArc
   const latest = getLatestEntryByLineage(db, lineageId);
 
   if (!latest) {
+    const diagnosis = diagnoseLineageLookup(db, lineageId);
+    if (diagnosis.kind === "is_entry_id") {
+      throw new DomainError(
+        "ENTRY_NOT_FOUND",
+        `Provided value is an entry_id, not a lineage_id. Correct lineage_id: ${diagnosis.actualLineageId}`,
+        "Re-call with lineage_id from the original create_entry response (NOT entry_id)."
+      );
+    }
+    if (diagnosis.kind === "orphan") {
+      throw new DomainError(
+        "ENTRY_NOT_FOUND",
+        `Lineage ${lineageId} has no head row (is_latest=1). Possible corrupt state.`,
+        "Inspect entries table and file a bug."
+      );
+    }
     throw new DomainError("ENTRY_NOT_FOUND", `Lineage not found: ${lineageId}`);
   }
 
