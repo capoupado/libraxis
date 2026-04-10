@@ -2,9 +2,8 @@ import type Database from "better-sqlite3";
 import { z } from "zod";
 
 import type { BaseMcpServer } from "../server.js";
-import { getEntryById, getLatestEntryByLineage } from "../../db/queries/entry-queries.js";
+import { getEntryById, getLatestEntryByLineage, searchEntriesFts } from "../../db/queries/entry-queries.js";
 import { listOutgoingLinks, listIncomingLinks, listSuggestedLinks } from "../../db/queries/link-queries.js";
-import { searchEntriesFts } from "../../db/queries/entry-queries.js";
 import { getEntryGraph } from "../../service/related.js";
 import { promoteSuggestion } from "../../service/related.js";
 import { searchEntries } from "../../service/entries.js";
@@ -45,7 +44,7 @@ const searchEntriesSchema = z.object({
 // ─── Tool 4: libraxis_list_suggested_links ────────────────────────────────────
 
 const listSuggestedLinksSchema = z.object({
-  entry_id: z.string().optional(),
+  entry_id: z.string().optional().describe('If omitted, returns all suggested links across all entries'),
 });
 
 // ─── Tool 5: libraxis_promote_suggested_link ──────────────────────────────────
@@ -79,11 +78,11 @@ export function registerRelatedTools(server: BaseMcpServer, db: Database.Databas
 
     const result: Record<string, unknown> = { entry };
 
+    if (parsed.include_links || parsed.include_backlinks) {
+      result.incoming_links = listIncomingLinks(db, entry.id);
+    }
     if (parsed.include_links) {
       result.outgoing_links = listOutgoingLinks(db, entry.id);
-      result.incoming_links = listIncomingLinks(db, entry.id);
-    } else if (parsed.include_backlinks) {
-      result.incoming_links = listIncomingLinks(db, entry.id);
     }
 
     return result;

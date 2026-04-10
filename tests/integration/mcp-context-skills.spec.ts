@@ -86,8 +86,8 @@ describe("MCP integration: context and skills tools", () => {
 
     expect(context.results.some((item) => item.lineage_id === "skill-a")).toBe(false);
 
-    await expect(server.callTool("libraxis_load_skill", { skill_lineage_id: "skill-a" })).rejects.toThrow(
-      "Skill entry was not found"
-    );
+    const loadResult = await server.callTool("libraxis_load_skill", { skill_lineage_id: "skill-a" }) as { error: string };
+    expect(loadResult.error).toBeDefined();
+    expect(loadResult.error).toContain("Skill entry was not found");
   });
 });

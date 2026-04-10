@@ -62,29 +62,29 @@ describe("integration: MCP agent tools", () => {
     const mcp = createMcpServer();
     registerAgentTools(mcp, ctx.db);
 
-    await expect(
-      mcp.callTool("libraxis_upload_agent", {
-        title: "Should fail",
-        body_markdown: "This payload does not explicitly declare agent intent.",
-        created_by: "integration"
-      })
-    ).rejects.toThrow("agent_intent");
+    const result = await mcp.callTool("libraxis_upload_agent", {
+      title: "Should fail",
+      body_markdown: "This payload does not explicitly declare agent intent.",
+      created_by: "integration"
+    }) as { error: string };
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("agent_intent");
   });
 
   it("rejects upload_agent payloads that declare non-agent skill_type", async () => {
     const mcp = createMcpServer();
     registerAgentTools(mcp, ctx.db);
 
-    await expect(
-      mcp.callTool("libraxis_upload_agent", {
-        agent_intent: "agent_package",
-        title: "Workflow Skill",
-        body_markdown: "This is not a reusable agent package.",
-        metadata: {
-          skill_type: "workflow"
-        },
-        created_by: "integration"
-      })
-    ).rejects.toThrow("non-agent value");
+    const result = await mcp.callTool("libraxis_upload_agent", {
+      agent_intent: "agent_package",
+      title: "Workflow Skill",
+      body_markdown: "This is not a reusable agent package.",
+      metadata: {
+        skill_type: "workflow"
+      },
+      created_by: "integration"
+    }) as { error: string };
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("non-agent value");
   });
 });

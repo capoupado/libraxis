@@ -29,7 +29,13 @@ export class ToolRegistry {
       throw new Error(`Tool not registered: ${name}`);
     }
 
-    return tool.handler(input);
+    try {
+      const result = await tool.handler(input);
+      return result;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { error: message };
+    }
   }
 }
 

@@ -274,13 +274,13 @@ describe("mcp related tools", () => {
       expect(listResult.suggestions.length).toBe(0);
     });
 
-    it("throws when suggestion id does not exist", async () => {
-      await expect(
-        server.callTool("libraxis_promote_suggested_link", {
-          id: "nonexistent",
-          relation_type: "related_to",
-        })
-      ).rejects.toThrow();
+    it("returns error when suggestion id does not exist", async () => {
+      const result = await server.callTool("libraxis_promote_suggested_link", {
+        id: "nonexistent",
+        relation_type: "related_to",
+      }) as { error: string };
+      expect(result.error).toBeDefined();
+      expect(result.error).toContain("nonexistent");
     });
   });
 });
