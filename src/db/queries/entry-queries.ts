@@ -172,3 +172,19 @@ export function archiveEntryLineage(db: Database.Database, lineageId: string): n
 
   return Number(result.changes ?? 0);
 }
+
+export function restoreEntryLineage(db: Database.Database, lineageId: string): number {
+  const result = db
+    .prepare(
+      `
+        UPDATE entries
+        SET status = 'active',
+            updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        WHERE lineage_id = ?
+          AND status = 'archived'
+      `
+    )
+    .run(lineageId);
+
+  return Number(result.changes ?? 0);
+}

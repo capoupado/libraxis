@@ -4,6 +4,10 @@ import cookie from "@fastify/cookie";
 import sensible from "@fastify/sensible";
 import formbody from "@fastify/formbody";
 import fastifyExpress from "@fastify/express";
+import fastifyStatic from "@fastify/static";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 import { isDomainError } from "../service/errors.js";
 import { registerSecurityMiddleware } from "./middleware/security.js";
@@ -17,6 +21,17 @@ export async function buildHttpServer() {
   await app.register(cookie);
   await app.register(formbody);
   await registerSecurityMiddleware(app);
+
+  const webDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../web");
+  if (existsSync(webDir)) {
+    await app.register(fastifyStatic, { root: webDir, prefix: "/", wildcard: false });
+    app.setNotFoundHandler((req, reply) => {
+      if (req.raw.method === "GET" && !req.url.startsWith("/health")) {
+        return reply.sendFile("index.html");
+      }
+      reply.status(404).send({ error: "NOT_FOUND" });
+    });
+  }
 
   app.get("/health", async () => ({
     status: "ok",

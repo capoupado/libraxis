@@ -9,7 +9,6 @@ import { LibraxisOAuthClientsStore } from "./oauth-clients-store.js";
 import { createApiKeyMaterial, hashApiKey, serializeScopes } from "./api-keys.js";
 import { createApiKey, revokeApiKey } from "../db/queries/auth-queries.js";
 import {
-  createAuthorizationCode,
   createRefreshToken,
   getAuthorizationCode,
   getRefreshTokenByHash,

@@ -12,6 +12,7 @@ import {
   archiveEntry,
   createEntry,
   getEntryHistory,
+  restoreEntry,
   searchEntries,
   updateEntry
 } from "../../service/entries.js";
@@ -32,7 +33,7 @@ import {
   parseGraphDirection,
   parseGraphRelationTypes,
   parseGraphSignals,
-  validSignals
+  type validSignals
 } from "./_graph-query.js";
 
 const depthSchema = z.coerce.number().int().min(1).max(10).catch(2);
@@ -166,6 +167,13 @@ export async function registerOwnerEntriesRoutes(
     enforceCsrf(request, session);
 
     return archiveEntry(db, request.params.lineageId);
+  });
+
+  app.post<{ Params: LineageParams }>("/owner/entries/:lineageId/restore", async (request, reply) => {
+    const { session } = requireOwnerSession(request, reply, db);
+    enforceCsrf(request, session);
+
+    return restoreEntry(db, request.params.lineageId);
   });
 
   // ─── Related-graph routes ──────────────────────────────────────────────────

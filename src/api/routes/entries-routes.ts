@@ -17,7 +17,7 @@ import {
   parseGraphDirection,
   parseGraphRelationTypes,
   parseGraphSignals,
-  validSignals
+  type validSignals
 } from "./_graph-query.js";
 
 const depthSchema = z.coerce.number().int().min(1).max(10).catch(2);

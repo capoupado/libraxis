@@ -19,6 +19,7 @@ export function App() {
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [tab, setTab] = useState<TabKey>("entries");
+  const [showUtilityTabs, setShowUtilityTabs] = useState(false);
   const [selectedLineageId, setSelectedLineageId] = useState<string | null>(null);
   const [entriesRefreshToken, setEntriesRefreshToken] = useState(0);
   const [newEntryType, setNewEntryType] = useState<
@@ -27,19 +28,33 @@ export function App() {
   const [feedback, setFeedback] = useState<string>("");
   const [appError, setAppError] = useState<string>("");
 
-  const tabs = useMemo(
+  const primaryTabs = useMemo(
     () => [
       { key: "entries" as const, label: "Entries" },
       { key: "graph" as const, label: "Graph" },
       { key: "new" as const, label: "New Entry" },
+      { key: "proposals" as const, label: "Proposals" }
+    ],
+    []
+  );
+
+  const utilityTabs = useMemo(
+    () => [
       { key: "agents" as const, label: "Agents" },
-      { key: "proposals" as const, label: "Proposals" },
       { key: "dashboard" as const, label: "Dashboard" },
       { key: "keys" as const, label: "API Keys" },
       { key: "howto" as const, label: "How-To" }
     ],
     []
   );
+
+  const activeUtilityTab = utilityTabs.some((item) => item.key === tab);
+
+  useEffect(() => {
+    if (activeUtilityTab) {
+      setShowUtilityTabs(true);
+    }
+  }, [activeUtilityTab]);
 
   useEffect(() => {
     let active = true;
@@ -107,6 +122,15 @@ export function App() {
         <div className="topbar-actions">
           <button
             type="button"
+            className={`cyber-btn cyber-btn--ghost cyber-btn--sm${showUtilityTabs ? " active" : ""}`}
+            onClick={() => setShowUtilityTabs((value) => !value)}
+            aria-expanded={showUtilityTabs}
+            aria-controls="utility-tabs"
+          >
+            {showUtilityTabs ? "Hide Tools" : "Show Tools"}
+          </button>
+          <button
+            type="button"
             className="cyber-btn cyber-btn--ghost"
             onClick={async () => {
               setAppError("");
@@ -137,7 +161,7 @@ export function App() {
       </header>
 
       <nav className="tabs" aria-label="Primary">
-        {tabs.map((item) => (
+        {primaryTabs.map((item) => (
           <button
             key={item.key}
             type="button"
@@ -152,6 +176,25 @@ export function App() {
           </button>
         ))}
       </nav>
+
+      {showUtilityTabs || activeUtilityTab ? (
+        <nav id="utility-tabs" className="tabs tabs--secondary" aria-label="Tools">
+          {utilityTabs.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`cyber-btn cyber-btn--sm${tab === item.key ? " active" : ""}`}
+              onClick={() => {
+                setFeedback("");
+                setAppError("");
+                setTab(item.key);
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      ) : null}
 
       <main className="content">
         {tab === "entries" ? (

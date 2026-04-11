@@ -4,8 +4,29 @@ services:
     container_name: libraxis
     ports:
       - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      LIBRAXIS_DB_PATH: /app/data/libraxis.db
+      LIBRAXIS_ADMIN_USERNAME: admin
+      LIBRAXIS_ADMIN_PASSWORD: change-me
+      LIBRAXIS_PUBLIC_URL: http://localhost:3000
+    # Optional: create a .env file to override any of the above.
+    # For production, set NODE_ENV=production and change LIBRAXIS_ADMIN_* —
+    # the app refuses to start in production with the default credentials.
     env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s

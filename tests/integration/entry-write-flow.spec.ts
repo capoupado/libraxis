@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createMcpServer } from "../../src/mcp/server.js";
 import { registerEntryTools } from "../../src/mcp/tools/entry-tools.js";
-import { getEntryHistory } from "../../src/service/entries.js";
+import {
+  archiveEntry,
+  getEntryHistory,
+  restoreEntry,
+  searchEntries
+} from "../../src/service/entries.js";
 import { traverseLinks } from "../../src/service/links.js";
 import { createMigratedTestDb, type TestDbContext } from "../helpers/test-db.js";
 
@@ -85,6 +90,21 @@ describe("integration: entry write flow", () => {
     expect(history.length).toBe(2);
     expect(history[0]?.version_number).toBe(2);
     expect(history[1]?.version_number).toBe(1);
+
+    const beforeArchive = searchEntries(ctx.db, "initial", 20);
+    expect(beforeArchive.some((entry) => entry.lineage_id === prompt.lineage_id)).toBe(true);
+
+    const archived = archiveEntry(ctx.db, prompt.lineage_id);
+    expect(archived.status).toBe("archived");
+
+    const whileArchived = searchEntries(ctx.db, "initial", 20);
+    expect(whileArchived.some((entry) => entry.lineage_id === prompt.lineage_id)).toBe(false);
+
+    const restored = restoreEntry(ctx.db, prompt.lineage_id);
+    expect(restored.status).toBe("active");
+
+    const afterRestore = searchEntries(ctx.db, "initial", 20);
+    expect(afterRestore.some((entry) => entry.lineage_id === prompt.lineage_id)).toBe(true);
 
     const links = traverseLinks(ctx.db, note.entry_id);
     expect(links.length).toBeGreaterThanOrEqual(1);

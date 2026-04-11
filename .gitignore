@@ -43,3 +43,4 @@ refined-plan.md
 
 # Per-developer MCP server config (points at localhost)
 .mcp.json
+.impeccable.md

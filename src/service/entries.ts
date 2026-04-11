@@ -8,6 +8,7 @@ import {
   getLatestEntryByLineage,
   listEntryHistory,
   markPreviousVersionsNotLatest,
+  restoreEntryLineage,
   type EntryRow,
   type EntryType
 } from "../db/queries/entry-queries.js";
@@ -21,7 +22,6 @@ import { evaluateContentLimits } from "./validation/content-limits.js";
 // Minimal logger shim — replace with pino/winston if the project adopts one.
 const logger = {
   warn: (obj: Record<string, unknown>, msg: string) => {
-    // eslint-disable-next-line no-console
     console.warn(msg, obj);
   },
 };
@@ -56,6 +56,11 @@ export interface EntryWriteResult {
 export interface EntryArchiveResult {
   lineage_id: string;
   status: "archived";
+}
+
+export interface EntryRestoreResult {
+  lineage_id: string;
+  status: "active";
 }
 
 export type EntryHistoryItem = EntryRow & { tags: string[] };
@@ -243,6 +248,44 @@ export function archiveEntry(db: Database.Database, lineageId: string): EntryArc
   return {
     lineage_id: lineageId,
     status: "archived"
+  };
+}
+
+export function restoreEntry(db: Database.Database, lineageId: string): EntryRestoreResult {
+  const latest = getLatestEntryByLineage(db, lineageId);
+
+  if (!latest) {
+    const diagnosis = diagnoseLineageLookup(db, lineageId);
+    if (diagnosis.kind === "is_entry_id") {
+      throw new DomainError(
+        "ENTRY_NOT_FOUND",
+        `Provided value is an entry_id, not a lineage_id. Correct lineage_id: ${diagnosis.actualLineageId}`,
+        "Re-call with lineage_id from the original create_entry response (NOT entry_id)."
+      );
+    }
+    if (diagnosis.kind === "orphan") {
+      throw new DomainError(
+        "ENTRY_NOT_FOUND",
+        `Lineage ${lineageId} has no head row (is_latest=1). Possible corrupt state.`,
+        "Inspect entries table and file a bug."
+      );
+    }
+    throw new DomainError("ENTRY_NOT_FOUND", `Lineage not found: ${lineageId}`);
+  }
+
+  if (latest.status === "active") {
+    throw new DomainError(
+      "FORBIDDEN",
+      "Entry is already active",
+      "Only archived entries can be restored."
+    );
+  }
+
+  restoreEntryLineage(db, lineageId);
+
+  return {
+    lineage_id: lineageId,
+    status: "active"
   };
 }
 

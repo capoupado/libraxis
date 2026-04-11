@@ -3,7 +3,6 @@ import type Database from "better-sqlite3";
 
 import { createMigratedTestDb, type TestDbContext } from "../helpers/test-db.js";
 import {
-  createEntryLink,
   listOutgoingLinks,
   listIncomingLinks,
   traverseNeighborhood,

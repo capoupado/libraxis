@@ -39,6 +39,22 @@ Libraxis is a self-hosted backend for storing, retrieving, and evolving knowledg
 
 ## Quick Start
 
+### Docker (recommended)
+
+**Prerequisites:** Docker 24+ with the Compose plugin
+
+```bash
+docker compose up
+```
+
+That's it. On first run the image is built, migrations run automatically, and both the API and the React web UI are served on the same port.
+
+Open `http://localhost:3000` — default credentials are `admin` / `change-me`.
+
+> **Production:** set `NODE_ENV=production` and override `LIBRAXIS_ADMIN_USERNAME` / `LIBRAXIS_ADMIN_PASSWORD` in a `.env` file (the app refuses to start in production with the default credentials).
+
+### Local (Node.js)
+
 **Prerequisites:** Node.js 20+, npm 10+
 
 ```bash
@@ -309,11 +325,18 @@ sudo mkdir -p /opt/libraxis
 sudo chown -R "$USER":"$USER" /opt/libraxis
 git clone <YOUR_REPO_URL> /opt/libraxis
 cd /opt/libraxis
-cp .env.example .env
-# Edit .env with production values (NODE_ENV=production, strong credentials)
+# Create .env with production values
+cat > .env <<EOF
+NODE_ENV=production
+LIBRAXIS_ADMIN_USERNAME=<your-username>
+LIBRAXIS_ADMIN_PASSWORD=<your-strong-password>
+LIBRAXIS_PUBLIC_URL=https://libraxis.your-domain.com
+EOF
 docker compose up -d --build
 curl -fsS http://127.0.0.1:3000/health
 ```
+
+The web UI is served by the backend on port 3000 — no separate static server needed.
 
 ### HTTPS via Caddy
 

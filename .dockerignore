@@ -9,3 +9,6 @@ Dockerfile*
 .env
 .env.*
 data/
+tests/
+.claude/
+*.md

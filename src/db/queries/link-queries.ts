@@ -206,6 +206,10 @@ export interface SuggestedLinkRow {
   id: string;
   source_entry_id: string;
   target_entry_id: string;
+  target_lineage_id: string;
+  target_title: string;
+  target_type: string;
+  target_body_preview: string | null;
   signal: string;
   score: number;
   relation_type: string | null;
@@ -228,12 +232,59 @@ export function listSuggestedLinks(
   if (sourceEntryId !== undefined) {
     return db
       .prepare<[string], SuggestedLinkRow>(
-        `SELECT * FROM suggested_links WHERE source_entry_id = ? ORDER BY score DESC`
+        `SELECT
+           sl.*,
+           te.lineage_id AS target_lineage_id,
+           COALESCE(
+             NULLIF(TRIM(tle.title), ''),
+             NULLIF(TRIM(te.title), ''),
+             'Untitled ' || COALESCE(tle.type, te.type, 'entry') || ' entry'
+           ) AS target_title,
+           COALESCE(tle.type, te.type) AS target_type,
+           SUBSTR(
+             TRIM(
+               REPLACE(
+                 REPLACE(COALESCE(tle.body_markdown, te.body_markdown, ''), CHAR(10), ' '),
+                 CHAR(13), ' '
+               )
+             ),
+             1,
+             160
+           ) AS target_body_preview
+         FROM suggested_links sl
+         JOIN entries te ON te.id = sl.target_entry_id
+         LEFT JOIN entries tle ON tle.lineage_id = te.lineage_id AND tle.is_latest = 1
+         WHERE sl.source_entry_id = ?
+         ORDER BY sl.score DESC, sl.generated_at DESC`
       )
       .all(sourceEntryId);
   }
   return db
-    .prepare<[], SuggestedLinkRow>(`SELECT * FROM suggested_links ORDER BY score DESC`)
+    .prepare<[], SuggestedLinkRow>(
+      `SELECT
+         sl.*,
+         te.lineage_id AS target_lineage_id,
+         COALESCE(
+           NULLIF(TRIM(tle.title), ''),
+           NULLIF(TRIM(te.title), ''),
+           'Untitled ' || COALESCE(tle.type, te.type, 'entry') || ' entry'
+         ) AS target_title,
+         COALESCE(tle.type, te.type) AS target_type,
+         SUBSTR(
+           TRIM(
+             REPLACE(
+               REPLACE(COALESCE(tle.body_markdown, te.body_markdown, ''), CHAR(10), ' '),
+               CHAR(13), ' '
+             )
+           ),
+           1,
+           160
+         ) AS target_body_preview
+       FROM suggested_links sl
+       JOIN entries te ON te.id = sl.target_entry_id
+       LEFT JOIN entries tle ON tle.lineage_id = te.lineage_id AND tle.is_latest = 1
+       ORDER BY sl.score DESC, sl.generated_at DESC`
+    )
     .all();
 }
 

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import type Database from "better-sqlite3";
 
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -12,7 +13,7 @@ import { createMigratedTestDb, type TestDbContext } from "../helpers/test-db.js"
 // ─── Seed helpers ─────────────────────────────────────────────────────────────
 
 function seedEntry(
-  db: import("better-sqlite3").Database,
+  db: Database.Database,
   id: string,
   lineageId: string,
   title = "Entry " + id,
@@ -25,7 +26,7 @@ function seedEntry(
 }
 
 function seedLink(
-  db: import("better-sqlite3").Database,
+  db: Database.Database,
   id: string,
   src: string,
   tgt: string,
@@ -37,7 +38,7 @@ function seedLink(
 }
 
 function seedSuggestedLink(
-  db: import("better-sqlite3").Database,
+  db: Database.Database,
   id: string,
   src: string,
   tgt: string
@@ -225,7 +226,15 @@ describe("integration: HTTP related-graph routes (owner)", () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.suggestions)).toBe(true);
     expect(res.body.suggestions.length).toBeGreaterThan(0);
-    expect(res.body.suggestions[0].source_entry_id).toBe("entry-a");
+    expect(res.body.suggestions[0]).toMatchObject({
+      source_entry_id: "entry-a",
+      target_entry_id: "entry-b",
+      target_lineage_id: "lineage-b",
+      target_title: "Beta Entry",
+      target_type: "note",
+      target_body_preview: "body",
+      rationale: "test suggestion",
+    });
   });
 
   it("GET /owner/entries/:lineageId/suggested-links returns empty array for unknown lineage", async () => {
@@ -369,6 +378,15 @@ describe("integration: HTTP related-graph routes (agent)", () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.suggestions)).toBe(true);
     expect(res.body.suggestions.length).toBeGreaterThan(0);
+    expect(res.body.suggestions[0]).toMatchObject({
+      source_entry_id: "entry-a",
+      target_entry_id: "entry-b",
+      target_lineage_id: "lineage-b",
+      target_title: "Beta Entry",
+      target_type: "note",
+      target_body_preview: "body",
+      rationale: "test suggestion",
+    });
   });
 
   it("GET /entries/:lineageId/suggested-links returns empty for unknown lineage", async () => {
