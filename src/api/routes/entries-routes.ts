@@ -13,9 +13,14 @@ import {
 import { getEntryGraph } from "../../service/related.js";
 import { getLatestEntryByLineage } from "../../db/queries/entry-queries.js";
 import { listSuggestedLinks } from "../../db/queries/link-queries.js";
+import {
+  parseGraphDirection,
+  parseGraphRelationTypes,
+  parseGraphSignals,
+  validSignals
+} from "./_graph-query.js";
 
 const depthSchema = z.coerce.number().int().min(1).max(10).catch(2);
-const validSignals = ["explicit", "tag", "fts"] as const;
 
 interface UpdateParams {
   lineageId: string;
@@ -81,19 +86,21 @@ export async function registerEntriesRoutes(app: FastifyInstance, db: Database.D
 
   app.get<{ Params: UpdateParams; Querystring: GraphQuery }>(
     "/entries/:lineageId/graph",
-    async (request) => {
+    async (request, reply) => {
       const { lineageId } = request.params;
       const depth = depthSchema.parse(request.query.depth);
-      const raw = request.query.signals;
-      const rawSignals = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : ["explicit", "tag", "fts"];
-      const signals = rawSignals.filter((s): s is typeof validSignals[number] =>
-        (validSignals as readonly string[]).includes(s)
-      );
-      const direction = (request.query.direction ?? "both") as "out" | "in" | "both";
-      const rawRelTypes = request.query.relation_types;
-      const relationTypes = rawRelTypes
-        ? rawRelTypes.split(",").map((s) => s.trim()).filter(Boolean)
-        : undefined;
+      let signals: Array<(typeof validSignals)[number]>;
+      let direction: "out" | "in" | "both";
+      let relationTypes: string[] | undefined;
+
+      try {
+        signals = parseGraphSignals(request.query.signals);
+        direction = parseGraphDirection(request.query.direction);
+        relationTypes = parseGraphRelationTypes(request.query.relation_types);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Invalid graph query parameters.";
+        return reply.code(400).send({ error: "INVALID_INPUT", message });
+      }
 
       return getEntryGraph(db, lineageId, { depth, signals, direction, relationTypes });
     }

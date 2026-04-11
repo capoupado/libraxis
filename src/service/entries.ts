@@ -11,6 +11,7 @@ import {
   type EntryRow,
   type EntryType
 } from "../db/queries/entry-queries.js";
+import { repointEntryLinks } from "../db/queries/link-queries.js";
 import { listTagsForEntry } from "../db/queries/tag-queries.js";
 import { DomainError } from "./errors.js";
 import { suggestRelations } from "./related.js";
@@ -187,6 +188,9 @@ export function updateEntry(db: Database.Database, input: UpdateEntryInput): Ent
     if (tagsToAttach.length > 0) {
       attachTags(db, newEntryId, tagsToAttach);
     }
+
+    // Keep lineage links visible after version bumps by repointing old-id links.
+    repointEntryLinks(db, latest.id, newEntryId);
   });
 
   writeTransaction();

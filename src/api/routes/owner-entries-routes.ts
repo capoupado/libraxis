@@ -28,9 +28,15 @@ import { getEntryGraph, promoteSuggestion } from "../../service/related.js";
 import { getLatestEntryByLineage } from "../../db/queries/entry-queries.js";
 import { listSuggestedLinks } from "../../db/queries/link-queries.js";
 
+import {
+  parseGraphDirection,
+  parseGraphRelationTypes,
+  parseGraphSignals,
+  validSignals
+} from "./_graph-query.js";
+
 const depthSchema = z.coerce.number().int().min(1).max(10).catch(2);
 const limitSchema = z.coerce.number().int().min(1).max(500).catch(200);
-const validSignals = ["explicit", "tag", "fts"] as const;
 const promoteSchema = z.object({ relation_type: relationSchema });
 
 interface SearchQuery {
@@ -171,16 +177,18 @@ export async function registerOwnerEntriesRoutes(
 
       const { lineageId } = request.params;
       const depth = depthSchema.parse(request.query.depth);
-      const raw = request.query.signals;
-      const rawSignals = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : ["explicit", "tag", "fts"];
-      const signals = rawSignals.filter((s): s is typeof validSignals[number] =>
-        (validSignals as readonly string[]).includes(s)
-      );
-      const direction = (request.query.direction ?? "both") as "out" | "in" | "both";
-      const rawRelTypes = request.query.relation_types;
-      const relationTypes = rawRelTypes
-        ? rawRelTypes.split(",").map((s) => s.trim()).filter(Boolean)
-        : undefined;
+      let signals: Array<(typeof validSignals)[number]>;
+      let direction: "out" | "in" | "both";
+      let relationTypes: string[] | undefined;
+
+      try {
+        signals = parseGraphSignals(request.query.signals);
+        direction = parseGraphDirection(request.query.direction);
+        relationTypes = parseGraphRelationTypes(request.query.relation_types);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Invalid graph query parameters.";
+        return reply.code(400).send({ error: "INVALID_INPUT", message });
+      }
 
       return getEntryGraph(db, lineageId, { depth, signals, direction, relationTypes });
     }
@@ -202,12 +210,22 @@ export async function registerOwnerEntriesRoutes(
     const topEntries = db
       .prepare<[number], DegreeRow>(
         `SELECT e.id, e.lineage_id, e.title, e.type,
-                COUNT(el.id) AS degree
+                COALESCE(d.degree, 0) AS degree
          FROM entries e
-         LEFT JOIN entry_links el
-           ON el.source_entry_id = e.id OR el.target_entry_id = e.id
+         LEFT JOIN (
+           SELECT x.self_id, COUNT(*) AS degree
+           FROM (
+             SELECT el.source_entry_id AS self_id, el.target_entry_id AS other_id
+             FROM entry_links el
+             UNION ALL
+             SELECT el.target_entry_id AS self_id, el.source_entry_id AS other_id
+             FROM entry_links el
+           ) x
+           JOIN entries eo ON eo.id = x.other_id
+           WHERE eo.is_latest = 1 AND eo.status = 'active'
+           GROUP BY x.self_id
+         ) d ON d.self_id = e.id
          WHERE e.is_latest = 1 AND e.status = 'active'
-         GROUP BY e.id
          ORDER BY degree DESC
          LIMIT ?`
       )
@@ -218,7 +236,6 @@ export async function registerOwnerEntriesRoutes(
     }
 
     // Build id → entry map for node hydration
-    const entryIdSet = new Set(topEntries.map((e) => e.id));
     const nodeMap = new Map<string, DegreeRow>(topEntries.map((e) => [e.id, e]));
 
     // Step 2: fetch all entry_links where BOTH endpoints are in the top-N set
@@ -241,7 +258,13 @@ export async function registerOwnerEntriesRoutes(
       .all(...entryIds, ...entryIds);
 
     // Step 3: resolve entry_ids to lineage_ids; deduplicate edges by lineage pair
-    const edgeMap = new Map<string, { source_lineage_id: string; target_lineage_id: string; relation_type: string }>();
+    const edgeMap = new Map<string, {
+      source_lineage_id: string;
+      target_lineage_id: string;
+      relation_type: string;
+      signal: "explicit";
+      score: number;
+    }>();
     for (const link of links) {
       const src = nodeMap.get(link.source_entry_id);
       const tgt = nodeMap.get(link.target_entry_id);
@@ -252,15 +275,19 @@ export async function registerOwnerEntriesRoutes(
           source_lineage_id: src.lineage_id,
           target_lineage_id: tgt.lineage_id,
           relation_type: link.relation_type,
+          signal: "explicit",
+          score: 1,
         });
       }
     }
 
-    // Filter nodes to only those involved in at least one edge (or keep all top-N)
+    // Keep top-N nodes and expose degree for UI sizing/debugging.
     const nodes = topEntries.map((e) => ({
       lineage_id: e.lineage_id,
+      entry_id: e.id,
       title: e.title,
       type: e.type,
+      depth: 1,
       degree: e.degree,
     }));
 

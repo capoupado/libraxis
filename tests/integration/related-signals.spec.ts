@@ -44,7 +44,8 @@ describe("findRelatedByTags — Jaccard ordering", () => {
     // Entry C: tags [t1]             → intersection=1, union=3 → jaccard ≈ 0.333
     // Entry D: tags [t1, t2, t3, t4] → intersection=3, union=4 → jaccard = 0.75
     for (const id of ["A", "B", "C", "D"]) seedEntry(db, id);
-    for (const [id, name] of [["t1","alpha"],["t2","beta"],["t3","gamma"],["t4","delta"]]) {
+    const tags: Array<[string, string]> = [["t1", "alpha"], ["t2", "beta"], ["t3", "gamma"], ["t4", "delta"]];
+    for (const [id, name] of tags) {
       seedTag(db, id, name);
     }
 
@@ -154,7 +155,7 @@ describe("findRelatedByFts — bm25 ordering", () => {
     const rows = findRelatedByFts(db, "query-entry", 10);
     // Scores should be non-decreasing (already desc sorted by the query)
     for (let i = 1; i < rows.length; i++) {
-      expect(rows[i - 1].score).toBeGreaterThanOrEqual(rows[i].score);
+      expect(rows[i - 1]!.score).toBeGreaterThanOrEqual(rows[i]!.score);
     }
   });
 

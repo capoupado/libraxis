@@ -89,6 +89,7 @@ export function getEntryGraph(
   const relationTypes = opts?.relationTypes;
   const direction = opts?.direction ?? "both";
   const limit = opts?.limit ?? 50;
+  if (limit <= 0) return { nodes: [], edges: [] };
 
   // Resolve root lineage → latest entry_id
   const rootEntry = getLatestEntryByLineage(db, rootLineageId);
@@ -159,6 +160,14 @@ export function getEntryGraph(
     return { nodes: [], edges: [] };
   }
 
+  const rootNode: GraphNode = {
+    lineage_id: rootEntry.lineage_id,
+    entry_id: rootEntry.id,
+    title: rootEntry.title,
+    type: rootEntry.type,
+    depth: 0,
+  };
+
   // Hydrate all entry_ids (neighbors only, not root)
   const allEntryIds = Array.from(entryDepthMap.keys());
   // Also hydrate root for lineage resolution in explicit edges
@@ -184,14 +193,15 @@ export function getEntryGraph(
     }
   }
 
-  // Apply limit to nodes (sorted by depth ascending)
-  const nodes = Array.from(nodesByLineage.values())
+  // Always include root when related neighbors exist, then fill remaining slots by depth.
+  const neighborNodes = Array.from(nodesByLineage.values())
     .sort((a, b) => a.depth - b.depth)
-    .slice(0, limit);
+    .slice(0, Math.max(limit - 1, 0));
+  const nodes = [rootNode, ...neighborNodes];
 
   // Build a set of lineage_ids in the final node set for edge filtering
   const nodeLineageSet = new Set(nodes.map((n) => n.lineage_id));
-  const rootLineage = rootEntry.lineage_id;
+  const rootLineage = rootNode.lineage_id;
 
   // Build edges — explicit wins over tag/fts for same (source, target) pair
   // Key: `${source_lineage_id}::${target_lineage_id}`
@@ -203,14 +213,8 @@ export function getEntryGraph(
     const tgtHydrated = hydratedMap.get(row.target_entry_id);
     if (!srcHydrated || !tgtHydrated) continue;
     // Only include edges where both endpoints are in the graph
-    if (
-      !nodeLineageSet.has(srcHydrated.lineage_id) &&
-      srcHydrated.lineage_id !== rootLineage
-    ) continue;
-    if (
-      !nodeLineageSet.has(tgtHydrated.lineage_id) &&
-      tgtHydrated.lineage_id !== rootLineage
-    ) continue;
+    if (!nodeLineageSet.has(srcHydrated.lineage_id)) continue;
+    if (!nodeLineageSet.has(tgtHydrated.lineage_id)) continue;
 
     const key = `${srcHydrated.lineage_id}::${tgtHydrated.lineage_id}`;
     edgeMap.set(key, {
@@ -352,19 +356,19 @@ export function promoteSuggestion(
   // validateDirection requires entry type info — load both entries
   const sourceRow = db
     .prepare<[string], { type: string }>(
-      `SELECT type FROM entries WHERE id = ?`
+      `SELECT type FROM entries WHERE id = ? AND is_latest = 1 AND status = 'active'`
     )
     .get(row.source_entry_id);
 
   const targetRow = db
     .prepare<[string], { type: string }>(
-      `SELECT type FROM entries WHERE id = ?`
+      `SELECT type FROM entries WHERE id = ? AND is_latest = 1 AND status = 'active'`
     )
     .get(row.target_entry_id);
 
   if (!sourceRow || !targetRow) {
     throw new Error(
-      `Cannot promote suggestion ${suggestedLinkId}: one or both linked entries no longer exist`
+      `Cannot promote suggestion ${suggestedLinkId}: one or both linked entries no longer exist or are inactive`
     );
   }
   validateDirection(

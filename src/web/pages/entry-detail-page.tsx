@@ -29,13 +29,13 @@ interface SuggestedLink {
 }
 
 const RELATION_TYPES = [
-  "relates_to",
-  "depends_on",
-  "enables",
-  "contradicts",
-  "refines",
-  "exemplifies",
+  "related_to",
+  "caused_by",
+  "resolved_by",
+  "composes",
+  "used_skill",
 ];
+const DEFAULT_RELATION_TYPE = RELATION_TYPES[0] ?? "related_to";
 
 function BacklinksSection({
   lineageId,
@@ -46,6 +46,7 @@ function BacklinksSection({
 }) {
   const [nodes, setNodes] = useState<BacklinkNode[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,11 +61,13 @@ function BacklinksSection({
         if (!controller.signal.aborted) {
           // Exclude the entry itself
           setNodes((data.nodes ?? []).filter((n) => n.lineage_id !== lineageId));
+          setLoadError(null);
           setLoaded(true);
         }
       } catch (err) {
         if (!controller.signal.aborted) {
-          console.error('Failed to load backlinks:', err);
+          console.error("Failed to load backlinks:", err);
+          setLoadError("Failed to load backlinks.");
           setLoaded(true);
         }
       }
@@ -73,11 +76,13 @@ function BacklinksSection({
     return () => controller.abort();
   }, [lineageId]);
 
-  if (!loaded || nodes.length === 0) return null;
+  if (!loaded) return null;
+  if (nodes.length === 0 && !loadError) return null;
 
   return (
     <div style={{ marginTop: "1.5rem" }}>
       <h3>Backlinks</h3>
+      {loadError && <p role="alert" style={{ color: "var(--cyber-accent)" }}>{loadError}</p>}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {nodes.map((n) => (
           <li key={n.lineage_id} style={{ marginBottom: "0.4rem" }}>
@@ -104,6 +109,7 @@ function SuggestedLinksSection({
 }) {
   const [suggestions, setSuggestions] = useState<SuggestedLink[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [relationTypes, setRelationTypes] = useState<Record<string, string>>({});
   const [promoting, setPromoting] = useState<string | null>(null);
   const [promoteError, setPromoteError] = useState<string | null>(null);
@@ -128,13 +134,17 @@ function SuggestedLinksSection({
         setSuggestions(items);
         const defaults: Record<string, string> = {};
         for (const s of items) {
-          defaults[s.id] = s.relation_type || RELATION_TYPES[0];
+          defaults[s.id] = s.relation_type || DEFAULT_RELATION_TYPE;
         }
         setRelationTypes((prev) => ({ ...defaults, ...prev }));
+        setLoadError(null);
         setLoaded(true);
       }
-    } catch {
-      if (!signal?.aborted && mountedRef.current) setLoaded(true);
+    } catch (err) {
+      if (!signal?.aborted && mountedRef.current) {
+        setLoadError(getErrorMessage(err, "Failed to load suggested links."));
+        setLoaded(true);
+      }
     }
   };
 
@@ -145,11 +155,13 @@ function SuggestedLinksSection({
     return () => controller.abort();
   }, [lineageId]);
 
-  if (!loaded || suggestions.length === 0) return null;
+  if (!loaded) return null;
+  if (suggestions.length === 0 && !loadError) return null;
 
   return (
     <div style={{ marginTop: "1.5rem" }}>
       <h3>Suggested Links</h3>
+      {loadError && <p role="alert" style={{ color: "var(--cyber-accent)" }}>{loadError}</p>}
       {promoteError && <p role="alert" style={{ color: "var(--cyber-accent)" }}>{promoteError}</p>}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {suggestions.map((s) => (
@@ -160,7 +172,7 @@ function SuggestedLinksSection({
               score: {s.score.toFixed(2)}
             </span>
             <select
-              value={relationTypes[s.id] ?? RELATION_TYPES[0]}
+              value={relationTypes[s.id] ?? DEFAULT_RELATION_TYPE}
               onChange={(e) =>
                 setRelationTypes((prev) => ({ ...prev, [s.id]: e.target.value }))
               }
@@ -186,7 +198,7 @@ function SuggestedLinksSection({
                         "content-type": "application/json",
                         "x-csrf-token": csrfToken,
                       },
-                      body: JSON.stringify({ relation_type: relationTypes[s.id] ?? RELATION_TYPES[0] }),
+                      body: JSON.stringify({ relation_type: relationTypes[s.id] ?? DEFAULT_RELATION_TYPE }),
                     },
                     "Failed to promote link."
                   );

@@ -2,6 +2,7 @@ import type { ApiKeyScope } from "../auth/api-keys.js";
 import { DomainError } from "../service/errors.js";
 
 export const MCP_TOOL_SCOPE: Record<string, ApiKeyScope> = {
+  libraxis_get_agent_briefing: "read",
   libraxis_get_context: "read",
   libraxis_list_skills: "read",
   libraxis_load_skill: "read",
@@ -19,7 +20,12 @@ export const MCP_TOOL_SCOPE: Record<string, ApiKeyScope> = {
   libraxis_export_entry_markdown: "read",
   libraxis_upload_agent: "write",
   libraxis_list_agents: "read",
-  libraxis_load_agent: "read"
+  libraxis_load_agent: "read",
+  libraxis_get_entry: "read",
+  libraxis_list_related: "read",
+  libraxis_search_entries: "read",
+  libraxis_list_suggested_links: "read",
+  libraxis_promote_suggested_link: "write"
 };
 
 export function getRequiredScope(toolName: string): ApiKeyScope {

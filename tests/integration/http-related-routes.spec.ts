@@ -113,6 +113,30 @@ describe("integration: HTTP related-graph routes (owner)", () => {
     expect(Array.isArray(res.body.nodes)).toBe(true);
   });
 
+  it("GET /owner/entries/:lineageId/graph returns 400 for invalid direction", async () => {
+    const { cookie } = await ownerLogin(app);
+
+    const res = await request(app.server)
+      .get("/owner/entries/lineage-a/graph")
+      .set("Cookie", cookie)
+      .query({ direction: "sideways" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("INVALID_INPUT");
+  });
+
+  it("GET /owner/entries/:lineageId/graph returns 400 for invalid relation_types", async () => {
+    const { cookie } = await ownerLogin(app);
+
+    const res = await request(app.server)
+      .get("/owner/entries/lineage-a/graph")
+      .set("Cookie", cookie)
+      .query({ relation_types: "depends_on" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("INVALID_INPUT");
+  });
+
   it("GET /owner/entries/:lineageId/graph returns empty for unknown lineageId", async () => {
     const { cookie } = await ownerLogin(app);
 
@@ -141,6 +165,23 @@ describe("integration: HTTP related-graph routes (owner)", () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.nodes)).toBe(true);
     expect(Array.isArray(res.body.edges)).toBe(true);
+    expect(res.body.nodes.length).toBeGreaterThan(0);
+    expect(res.body.edges.length).toBeGreaterThan(0);
+    expect(res.body.nodes[0]).toMatchObject({
+      lineage_id: expect.any(String),
+      entry_id: expect.any(String),
+      title: expect.any(String),
+      type: expect.any(String),
+      depth: expect.any(Number),
+      degree: expect.any(Number),
+    });
+    expect(res.body.edges[0]).toMatchObject({
+      source_lineage_id: expect.any(String),
+      target_lineage_id: expect.any(String),
+      relation_type: expect.any(String),
+      signal: "explicit",
+      score: expect.any(Number),
+    });
   });
 
   it("GET /owner/graph respects limit query param", async () => {
@@ -282,6 +323,33 @@ describe("integration: HTTP related-graph routes (agent)", () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.nodes)).toBe(true);
+  });
+
+  it("GET /entries/:lineageId/graph returns 400 for invalid signals", async () => {
+    const res = await request(app.server)
+      .get("/entries/lineage-a/graph")
+      .query({ signals: "explicit,unknown" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("INVALID_INPUT");
+  });
+
+  it("GET /entries/:lineageId/graph returns 400 for invalid direction", async () => {
+    const res = await request(app.server)
+      .get("/entries/lineage-a/graph")
+      .query({ direction: "sideways" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("INVALID_INPUT");
+  });
+
+  it("GET /entries/:lineageId/graph returns 400 for invalid relation_types", async () => {
+    const res = await request(app.server)
+      .get("/entries/lineage-a/graph")
+      .query({ relation_types: "depends_on" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("INVALID_INPUT");
   });
 
   it("GET /entries/:lineageId/graph returns empty for unknown lineageId", async () => {

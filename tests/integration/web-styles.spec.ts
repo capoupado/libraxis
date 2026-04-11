@@ -27,8 +27,8 @@ describe("integration: web style guardrails", () => {
   it("includes mobile layout adjustments for shell and input groups", () => {
     const css = readStyles();
 
-    expect(css).toContain("@media (max-width: 600px)");
-    expect(css).toContain(".input-group");
-    expect(css).toContain("content: \"cmd>\"");
+    expect(css).toContain("@media (max-width: 640px)");
+    expect(css).toContain(".cyber-input");
+    expect(css).toContain(".cyber-input__prefix");
   });
 });

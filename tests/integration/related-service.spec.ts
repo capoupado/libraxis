@@ -8,7 +8,7 @@ import {
   suggestRelations,
   promoteSuggestion,
 } from "../../src/service/related.js";
-import { createEntry } from "../../src/service/entries.js";
+import { createEntry, updateEntry } from "../../src/service/entries.js";
 import { listSuggestedLinks } from "../../src/db/queries/link-queries.js";
 
 // ─── Seed helpers ─────────────────────────────────────────────────────────────
@@ -112,6 +112,17 @@ describe("getEntryGraph", () => {
     expect(bEdge!.signal).toBe("explicit");
   });
 
+  it("returns edges whose endpoints are always present in nodes", () => {
+    const graph = getEntryGraph(db, "lineage-a", { signals: ["explicit", "tag", "fts"] });
+    const nodeIds = new Set(graph.nodes.map((node) => node.lineage_id));
+
+    expect(nodeIds.has("lineage-a")).toBe(true);
+    for (const edge of graph.edges) {
+      expect(nodeIds.has(edge.source_lineage_id)).toBe(true);
+      expect(nodeIds.has(edge.target_lineage_id)).toBe(true);
+    }
+  });
+
   it("explicit-wins: when a node has both explicit link AND tag overlap, only explicit edge remains", () => {
     // Add tag overlap between A and B too (so B would also appear as tag signal)
     seedEntryTag(db, "entry-b", "tag-1");
@@ -125,7 +136,7 @@ describe("getEntryGraph", () => {
         (e.source_lineage_id === "lineage-b" && e.target_lineage_id === "lineage-a")
     );
     expect(abEdges).toHaveLength(1);
-    expect(abEdges[0].signal).toBe("explicit");
+    expect(abEdges[0]!.signal).toBe("explicit");
   });
 
   it("nodes include lineage_id, entry_id, title, type, depth fields", () => {
@@ -150,6 +161,30 @@ describe("getEntryGraph", () => {
     expect(() =>
       getEntryGraph(db, "nonexistent-lineage", { signals: ["explicit"] })
     ).not.toThrow(); // fire-and-forget graceful empty
+  });
+
+  it("keeps explicit graph links after root entry version update", () => {
+    const updated = updateEntry(db, {
+      lineage_id: "lineage-a",
+      expected_version: 1,
+      title: "Alpha entry v2",
+      body_markdown: "alpha body updated",
+      created_by: "test",
+    });
+
+    expect(updated.version_number).toBe(2);
+
+    const graph = getEntryGraph(db, "lineage-a", { signals: ["explicit"] });
+    const lineageIds = graph.nodes.map((n) => n.lineage_id);
+    expect(lineageIds).toContain("lineage-b");
+
+    const bEdge = graph.edges.find(
+      (e) =>
+        (e.source_lineage_id === "lineage-a" && e.target_lineage_id === "lineage-b") ||
+        (e.source_lineage_id === "lineage-b" && e.target_lineage_id === "lineage-a")
+    );
+    expect(bEdge).toBeDefined();
+    expect(bEdge!.signal).toBe("explicit");
   });
 });
 
@@ -182,10 +217,10 @@ describe("getBacklinks", () => {
 
   it("returned nodes have lineage_id, entry_id, title, type fields", () => {
     const nodes = getBacklinks(db, "entry-b");
-    expect(nodes[0].lineage_id).toBe("lineage-a");
-    expect(nodes[0].entry_id).toBe("entry-a");
-    expect(nodes[0].title).toBe("Alpha");
-    expect(nodes[0].type).toBe("note");
+    expect(nodes[0]!.lineage_id).toBe("lineage-a");
+    expect(nodes[0]!.entry_id).toBe("entry-a");
+    expect(nodes[0]!.title).toBe("Alpha");
+    expect(nodes[0]!.type).toBe("note");
   });
 });
 
@@ -211,15 +246,15 @@ describe("suggestRelations", () => {
     suggestRelations(db, "entry-a", { signals: ["tag"] });
     const rows = listSuggestedLinks(db, "entry-a");
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows[0].signal).toBe("tag");
-    expect(rows[0].source_entry_id).toBe("entry-a");
-    expect(rows[0].target_entry_id).toBe("entry-b");
+    expect(rows[0]!.signal).toBe("tag");
+    expect(rows[0]!.source_entry_id).toBe("entry-a");
+    expect(rows[0]!.target_entry_id).toBe("entry-b");
   });
 
   it("rationale for tag signal includes 'jaccard'", () => {
     suggestRelations(db, "entry-a", { signals: ["tag"] });
     const rows = listSuggestedLinks(db, "entry-a");
-    expect(rows[0].rationale).toMatch(/jaccard/);
+    expect(rows[0]!.rationale).toMatch(/jaccard/);
   });
 
   it("calling twice upserts (no duplicate rows)", () => {
@@ -313,7 +348,7 @@ describe("createEntry fires suggestRelations silently", () => {
     expect(result.entry_id).toBeTruthy();
     // After createEntry, suggested_links should have rows (tag overlap with existing-1)
     const rows = listSuggestedLinks(db, result.entry_id);
-    expect(rows.length).toBeGreaterThanOrEqual(0); // at minimum no error; may have rows
+    expect(rows.length).toBeGreaterThan(0);
   });
 
   it("createEntry does not propagate errors from suggestRelations", () => {

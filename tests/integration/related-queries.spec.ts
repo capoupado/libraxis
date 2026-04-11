@@ -149,15 +149,15 @@ describe("listOutgoingLinks / listIncomingLinks", () => {
   it("listOutgoingLinks(X) returns 1 row pointing to Y", () => {
     const rows = listOutgoingLinks(db, "X");
     expect(rows).toHaveLength(1);
-    expect(rows[0].target_entry_id).toBe("Y");
-    expect(rows[0].source_entry_id).toBe("X");
+    expect(rows[0]!.target_entry_id).toBe("Y");
+    expect(rows[0]!.source_entry_id).toBe("X");
   });
 
   it("listIncomingLinks(Y) returns 1 row coming from X", () => {
     const rows = listIncomingLinks(db, "Y");
     expect(rows).toHaveLength(1);
-    expect(rows[0].source_entry_id).toBe("X");
-    expect(rows[0].target_entry_id).toBe("Y");
+    expect(rows[0]!.source_entry_id).toBe("X");
+    expect(rows[0]!.target_entry_id).toBe("Y");
   });
 
   it("listIncomingLinks(X) is empty (X has no incoming links)", () => {
@@ -202,8 +202,8 @@ describe("upsertSuggestedLink / listSuggestedLinks / deleteSuggestedLink / promo
     });
     const rows = listSuggestedLinks(db, "P");
     expect(rows).toHaveLength(1);
-    expect(rows[0].score).toBeCloseTo(0.9);
-    expect(rows[0].rationale).toBe("updated");
+    expect(rows[0]!.score).toBeCloseTo(0.9);
+    expect(rows[0]!.rationale).toBe("updated");
   });
 
   it("listSuggestedLinks without filter returns all rows", () => {
@@ -218,7 +218,7 @@ describe("upsertSuggestedLink / listSuggestedLinks / deleteSuggestedLink / promo
     upsertSuggestedLink(db, { sourceEntryId: "P", targetEntryId: "Q", signal: "tag", score: 0.4 });
     const rows = listSuggestedLinks(db, "P");
     expect(rows).toHaveLength(1);
-    deleteSuggestedLink(db, rows[0].id);
+    deleteSuggestedLink(db, rows[0]!.id);
     expect(listSuggestedLinks(db, "P")).toHaveLength(0);
   });
 
@@ -232,7 +232,7 @@ describe("upsertSuggestedLink / listSuggestedLinks / deleteSuggestedLink / promo
     const suggested = listSuggestedLinks(db, "P");
     expect(suggested).toHaveLength(1);
 
-    const newLinkId = promoteSuggestedLink(db, suggested[0].id, "related_to", "tester");
+    const newLinkId = promoteSuggestedLink(db, suggested[0]!.id, "related_to", "tester");
 
     expect(typeof newLinkId).toBe("string");
     expect(newLinkId.length).toBeGreaterThan(0);
@@ -243,8 +243,8 @@ describe("upsertSuggestedLink / listSuggestedLinks / deleteSuggestedLink / promo
     // entry_links gained a row
     const links = listOutgoingLinks(db, "P");
     expect(links).toHaveLength(1);
-    expect(links[0].id).toBe(newLinkId);
-    expect(links[0].relation_type).toBe("related_to");
+    expect(links[0]!.id).toBe(newLinkId);
+    expect(links[0]!.relation_type).toBe("related_to");
   });
 });
 
@@ -279,7 +279,7 @@ describe("findRelatedByTags", () => {
     expect(ids).toContain("N");
     expect(ids).not.toContain("O");
     expect(ids).not.toContain("M");
-    expect(rows[0].jaccard).toBeGreaterThan(0);
+    expect(rows[0]!.jaccard).toBeGreaterThan(0);
   });
 
   it("returns empty array when entry has no shared tags", () => {

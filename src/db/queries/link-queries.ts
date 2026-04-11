@@ -62,6 +62,28 @@ export function listIncomingLinks(db: Database.Database, entryId: string): Entry
     .all(entryId);
 }
 
+/**
+ * Repoints all entry_links referencing `fromEntryId` to `toEntryId`.
+ * Must be called inside an existing transaction (e.g. the version-bump writeTransaction).
+ */
+export function repointEntryLinks(
+  db: Database.Database,
+  fromEntryId: string,
+  toEntryId: string
+): void {
+  if (fromEntryId === toEntryId) {
+    return;
+  }
+
+  db.prepare(
+    `UPDATE entry_links SET source_entry_id = ? WHERE source_entry_id = ?`
+  ).run(toEntryId, fromEntryId);
+
+  db.prepare(
+    `UPDATE entry_links SET target_entry_id = ? WHERE target_entry_id = ?`
+  ).run(toEntryId, fromEntryId);
+}
+
 // ─── Neighborhood traversal ───────────────────────────────────────────────────
 
 export interface TraversalNode {

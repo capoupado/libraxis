@@ -58,8 +58,8 @@ describe("upsertSuggestedLink — idempotency", () => {
 
     const rows = listSuggestedLinks(db, "src");
     expect(rows).toHaveLength(1);
-    expect(rows[0].score).toBeCloseTo(0.9);
-    expect(rows[0].rationale).toBe("updated rationale");
+    expect(rows[0]!.score).toBeCloseTo(0.9);
+    expect(rows[0]!.rationale).toBe("updated rationale");
   });
 
   it("different signals for same (source, target) pair produce separate rows", () => {
@@ -107,13 +107,13 @@ describe("promoteSuggestedLink — transaction", () => {
     const suggested = listSuggestedLinks(db, "src");
     expect(suggested).toHaveLength(1);
 
-    const newLinkId = promoteSuggestedLink(db, suggested[0].id, "related_to", "tester");
+    const newLinkId = promoteSuggestedLink(db, suggested[0]!.id, "related_to", "tester");
 
     // entry_links gained a row
     const links = listOutgoingLinks(db, "src");
     expect(links).toHaveLength(1);
-    expect(links[0].id).toBe(newLinkId);
-    expect(links[0].relation_type).toBe("related_to");
+    expect(links[0]!.id).toBe(newLinkId);
+    expect(links[0]!.relation_type).toBe("related_to");
 
     // suggested_links lost the row
     expect(listSuggestedLinks(db, "src")).toHaveLength(0);
@@ -128,7 +128,7 @@ describe("promoteSuggestedLink — transaction", () => {
     });
 
     const rows = listSuggestedLinks(db, "src");
-    const newId = promoteSuggestedLink(db, rows[0].id, "related_to", "tester");
+    const newId = promoteSuggestedLink(db, rows[0]!.id, "related_to", "tester");
 
     expect(typeof newId).toBe("string");
     expect(newId.length).toBeGreaterThan(0);
@@ -170,7 +170,7 @@ describe("promoteSuggestion — validateDirection", () => {
     // Row must still be present (transaction rolled back)
     const rows = listSuggestedLinks(db, "note-a");
     expect(rows).toHaveLength(1);
-    expect(rows[0].id).toBe("sugg-dir-1");
+    expect(rows[0]!.id).toBe("sugg-dir-1");
   });
 
   it("promoteSuggestion succeeds with valid relation_type for note→note", () => {
